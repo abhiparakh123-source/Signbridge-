@@ -16,14 +16,14 @@ class StreamProtocolTests(unittest.TestCase):
             "sequence": 0,
             "timestamp_ms": 10,
             "mime_type": "image/jpeg",
-            "frame_b64": base64.b64encode(b"image").decode("ascii"),
+            "frame_b64": base64.b64encode(b"\\xff\\xd8\\xffsample").decode("ascii"),
         }
         data.update(overrides)
         return data
 
     def test_valid_frame_envelope(self):
         result = validate_frame_message(self.frame())
-        self.assertEqual(result["frame_bytes"], 5)
+        self.assertEqual(result["frame_bytes"], 9)
 
     def test_language_is_mandatory_and_specific(self):
         with self.assertRaises(ProtocolError):
@@ -42,6 +42,24 @@ class StreamProtocolTests(unittest.TestCase):
     def test_invalid_base64_is_rejected(self):
         with self.assertRaises(ProtocolError):
             validate_frame_message(self.frame(frame_b64="%%%"))
+
+    def test_declared_mime_must_match_image_signature(self):
+        with self.assertRaisesRegex(ProtocolError, "do not match"):
+            validate_frame_message(self.frame(mime_type="image/png"))
+
+    def test_accepts_supported_image_signatures(self):
+        samples = {
+            "image/jpeg": b"\\xff\\xd8\\xffjpeg",
+            "image/png": b"\\x89PNG\\r\\n\\x1a\\nrest",
+            "image/webp": b"RIFFxxxxWEBPdata",
+        }
+        for mime, raw in samples.items():
+            with self.subTest(mime=mime):
+                result = validate_frame_message(self.frame(
+                    mime_type=mime,
+                    frame_b64=base64.b64encode(raw).decode("ascii"),
+                ))
+                self.assertEqual(result["frame_bytes"], len(raw))
 
     def test_provisional_text_cannot_be_spoken(self):
         result = validate_hypothesis({
