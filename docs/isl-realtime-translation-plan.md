@@ -21,6 +21,14 @@ The system must never silently turn an uncertain prediction into a confident sen
 - The repository README says MIT, but the Git tree currently has no separate LICENSE file. Treat the code license as unverified until the owner supplies a complete license file; do not copy or redistribute code/weights on the README statement alone. Audit every dependency/model/data license too.
 - Treat this as a research baseline to reproduce and evaluate, not a production-ready interpreter.
 
+### 1b. Alternative architecture candidate: Danshivam/RTISLT
+
+- Public implementation: https://github.com/Danshivam/RTISLT
+- The repository includes an MIT LICENSE file for the repository code. This does **not** automatically license third-party datasets, pretrained checkpoints, or dependencies; audit those separately before use.
+- Its README describes a landmark-based design with hands/body pose and a separate face/head non-manual stream, local/global temporal modeling and an English decoder.
+- The README's own progress checklist marks the BiLSTM and iSign Transformer training/evaluation steps incomplete. Treat the architecture as a research design and inspect the implementation/checkpoints before relying on it; do not assume a trained continuous translator is ready to run.
+- It is a candidate to compare against the Sid-V5 baseline, not a drop-in production model.
+
 ### 2. Continuous sentence data: ISL-CSLTR
 
 - Dataset record: https://data.mendeley.com/datasets/kcmpdxky7p/1
