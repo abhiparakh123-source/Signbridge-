@@ -67,3 +67,16 @@ Do not rely on SIGNBRIDGE as the sole communication method for emergencies, medi
 - Test offline/reload behaviour and PWA installation separately.
 
 Automated production build success is not a substitute for this manual test matrix. Do not mark a feature fully verified until it has passed on the target device/browser.
+
+
+## Call Assist (preview)
+
+Call Assist helps a Deaf or hard-of-hearing user prepare a service call: enter a contact number, open the device phone app, draft a message, preview it using device text-to-speech, and prepare written replies and appointment-confirmation details.
+
+**This is not a live call relay.** The current web app cannot route the phone call's audio into speech recognition, cannot automatically transcribe or translate the other party, and cannot stream AI speech into a PSTN call. The phone app handles the actual call. Voice preview is played locally by the browser/device and is not injected into the call audio. Users must not rely on it as a real-time interpreter.
+
+### Requirements for a production two-way call bridge
+
+A future release needs a telephony provider with an India-supported PSTN route and compliant caller ID, a secure backend that holds provider credentials, real-time streaming audio, speech recognition for Hindi and English, translation that preserves names/numbers/amounts, natural speech synthesis, interruption/turn-taking handling, explicit consent and call recording controls, and auditable confirmations. No provider keys may be placed in browser code. Every uncertain transcript must be visibly marked and repeated back for confirmation; high-impact details should be confirmed by SMS/text before any booking or payment. A human interpreter or text fallback must remain available.
+
+Do not market Call Assist as fully automatic or perfectly accurate until it passes independent testing with Deaf users, Hindi/English speakers, service providers and noisy real-world calls.
