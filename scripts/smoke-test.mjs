@@ -6,11 +6,11 @@ const indexPath = join(dist, "index.html");
 if (!existsSync(indexPath)) throw new Error("Build output is missing dist/index.html");
 
 const html = readFileSync(indexPath, "utf8");
-const assets = [...html.matchAll(/(?:src|href)="([^"]+\\.(?:js|css))"/g)].map(match => match[1]);
+const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(match => match[1]);
 if (assets.length < 2) throw new Error("Expected built JavaScript and CSS assets to be referenced by the page");
 
 for (const asset of assets) {
-  const path = join(dist, asset.replace(/^\\//, ""));
+  const path = join(dist, asset.replace(/^\//, ""));
   if (!existsSync(path)) throw new Error(`Built asset is missing: ${asset}`);
   if (readFileSync(path, "utf8").length < 100) throw new Error(`Built asset appears unexpectedly small: ${asset}`);
 }
