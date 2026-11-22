@@ -9,32 +9,12 @@ import numpy as np
 import torch
 
 from model import LandmarkCTCModel
+from checkpoint_validation import validate_checkpoint_metadata
 
 
 def load_model(checkpoint_path: Path, device: torch.device):
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
-    if checkpoint.get("model_type") != "landmark_ctc_transformer_baseline":
-        raise ValueError("unsupported or unverified model checkpoint type")
-    vocabulary = checkpoint.get("vocabulary")
-    if not isinstance(vocabulary, dict) or vocabulary.get("<blank>") != 0:
-        raise ValueError("checkpoint vocabulary is invalid")
-    token_ids = list(vocabulary.values())
-    if (
-        any(not isinstance(token, str) or not token for token in vocabulary)
-        or any(isinstance(index, bool) or not isinstance(index, int) for index in token_ids)
-        or sorted(token_ids) != list(range(len(vocabulary)))
-        or len(set(token_ids)) != len(token_ids)
-    ):
-        raise ValueError("checkpoint vocabulary IDs must be unique, contiguous integers")
-    feature_dim = checkpoint.get("feature_dim")
-    if isinstance(feature_dim, bool) or not isinstance(feature_dim, int) or feature_dim < 1:
-        raise ValueError("checkpoint feature_dim must be a positive integer")
-    language = checkpoint.get("sign_language")
-    if language not in {"ISL", "ASL", "BSL"}:
-        raise ValueError("checkpoint sign_language metadata is invalid")
-    architecture = checkpoint.get("architecture", {})
-    if not isinstance(architecture, dict):
-        raise ValueError("checkpoint architecture metadata is invalid")
+    vocabulary, feature_dim, language, architecture = validate_checkpoint_metadata(checkpoint)
     model = LandmarkCTCModel(
         feature_dim=feature_dim,
         vocabulary_size=len(vocabulary),
