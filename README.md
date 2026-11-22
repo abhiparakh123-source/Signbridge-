@@ -15,6 +15,10 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 - Starter learning path with locally saved progress
 - PWA manifest and service-worker shell cache
 
+## Real-time ISL translation plan
+
+The engineering research, candidate datasets, architecture, licensing checks and release gates for a real continuous ISL translator are documented in [docs/isl-realtime-translation-plan.md](docs/isl-realtime-translation-plan.md). This is a plan, not an implemented model: the current camera remains a preview until a real streaming model is integrated and evaluated with fluent Deaf signers.
+
 ## Run locally
 Run npm install, then npm run dev.
 
