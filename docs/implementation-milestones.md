@@ -1,6 +1,6 @@
 # SIGNBRIDGE implementation milestones
 
-This checklist tracks what exists in the repository versus what still requires real training data, model weights, and device validation. It is a personal family accessibility project.
+This checklist tracks what exists in the repository versus what still requires real training data, model weights, and device validation. It is a personal family accessibility project. **Current model-development priority: ASL-first pilot**, while ISL remains a separate target and must not be treated as interchangeable with ASL. See [ASL-first research pilot](asl-first-pilot.md).
 
 ## Working foundation
 
@@ -17,12 +17,14 @@ This checklist tracks what exists in the repository versus what still requires r
 
 ### A. Data and model (critical path)
 
-- [ ] Obtain written approval and verify access, attribution and permitted family-prototype use for FDMSE-ISL and/or ISLRTC resources. See [dataset access and licensing plan](isl-dataset-access-and-licensing.md).
+- [ ] ASL-first: verify How2Sign CC BY-NC 4.0 terms and research access; inspect permitted continuous-video/pose modalities and alignment metadata. See [ASL-first research pilot](asl-first-pilot.md).
+- [ ] Verify ASLLRP/NCSLGR research/education access terms before use; keep ASL corpus data separate.
+- [ ] Continue the separate ISL access process for when appropriate rights-cleared data are available. See [dataset access and licensing plan](isl-dataset-access-and-licensing.md).
 - [ ] Confirm family members' signing languages and regional ISL variation; keep ISL, ASL and BSL datasets separate.
 - [ ] Build reproducible video-to-landmark extraction for both hands, upper-body pose and face/non-manual cues.
 - [ ] Build dataset quality review with fluent signer confirmation of every label.
 - [x] Add an experimental, single-language landmark Transformer + CTC training scaffold with signer-split and consent checks.
-- [ ] Extract and quality-review real landmark sequences; the feature manifest template contains placeholders only.
+- [ ] Extract and quality-review real ASL landmark sequences first; the feature manifest template contains placeholders only.
 - [ ] Reproduce an isolated-sign FDMSE-ISL baseline (if access is approved); do not treat it as continuous translation.\n- [ ] Obtain/collect rights-cleared continuous ISL sentence data and reproduce a sentence-level baseline with signer-independent WER/CER and expert review.
 - [ ] Train/fine-tune a streaming temporal model with incremental, revisable hypotheses.
 - [ ] Calibrate confidence and abstention on unseen signers; do not equate model confidence with correctness.
@@ -40,7 +42,7 @@ This checklist tracks what exists in the repository versus what still requires r
 
 ### C. Other languages and reverse communication
 
-- [ ] Build and evaluate an ASL model and vocabulary separately.
+- [ ] Build and evaluate the ASL model and vocabulary first, as the current pilot priority.
 - [ ] Build and evaluate a BSL model and vocabulary separately.
 - [ ] Add spoken Hindi/English captions with clear indication when browser speech recognition is unavailable or uncertain.
 - [ ] Implement true two-way live conversation mode with user-visible consent and transcript correction.
@@ -70,7 +72,7 @@ A camera configured for 60 fps does not guarantee 60 fps inference or accurate t
 
 ## Exit criteria for the first useful family pilot
 
-The first pilot should focus on ISL and a clearly bounded set of everyday family conversations. It should produce incremental text at natural signing speed, visibly flag uncertainty, allow corrections, run reliably on the family's Android device, and be evaluated with signer-independent testing. ASL/BSL expansion follows as separate language work, not a relabeling of the ISL model.
+The first research pilot should focus on ASL continuous signing using rights-cleared data, followed by independent Deaf ASL evaluation. ASL is only useful when the signer is actually signing ASL; it cannot interpret ISL. The eventual family pilot must use the sign language the parents naturally use. It should produce incremental text at natural signing speed, visibly flag uncertainty, allow corrections, run reliably on the family's Android device, and be evaluated with signer-independent testing. ASL/BSL expansion follows as separate language work, not a relabeling of the ISL model.
 
 ## Phone integration engineering decision
 
