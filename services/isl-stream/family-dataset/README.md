@@ -39,3 +39,15 @@ A passing check only confirms metadata, file paths, consent flags and signer spl
 ## Recording guidance
 
 Capture multiple natural examples per phrase, not just one frozen pose. Include the movement into and out of the sign, both hands when used, facial expression and upper body where relevant. Avoid forcing a signer's natural speed or style. Have the signer confirm the intended phrase label after each clip.
+
+## Optional landmark extraction and training
+
+Install dependencies from `services/isl-stream/requirements-extraction.txt` and `requirements-training.txt`. Run the extractor from this folder:
+
+```bash
+python ../Signbridge/services/isl-stream/training/extract_landmarks.py --manifest manifest.csv --data-root . --output-manifest features_manifest.csv
+```
+
+Use the actual path to your cloned SIGNBRIDGE repository in place of the illustrative path above. The manifest `label` must be a signer-confirmed, expert-reviewed gloss sequence (for example `THANK_YOU`), not a Hindi/English sentence. The extractor writes `features/*.npy` locally. Then run the training script with `--manifest features_manifest.csv --data-root . --language ISL --output /private-models/isl-ctc.pt`.
+
+The baseline reports gloss-level WER/CER on a held-out signer split. A small family dataset is not enough to establish general accuracy. Keep the model experimental and never rely on it for emergency, medical, financial or other critical messages.
