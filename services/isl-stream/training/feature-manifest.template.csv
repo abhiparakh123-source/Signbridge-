@@ -1,4 +1,4 @@
 clip_id,signer_id,sign_language,feature_path,gloss,consent,split
-example-001,signer-a,ISL,features/example-001.npy,HELLO,true,train
-example-002,signer-b,ISL,features/example-002.npy,THANK_YOU,true,validation
-example-003,signer-c,ISL,features/example-003.npy,HELP,true,test
+example-001,parent-a,ISL,features/example-001.npy,HELLO,yes,train
+example-002,parent-b,ISL,features/example-002.npy,THANK_YOU,yes,validation
+example-003,parent-c,ISL,features/example-003.npy,HELP,yes,test
