@@ -60,3 +60,6 @@
 .confirm-item{display:flex;gap:9px;align-items:flex-start;background:#071827;border:1px solid var(--line);border-radius:8px;padding:12px;color:#dce9ed;font-size:12px;line-height:1.45}
 .confirm-item input{accent-color:var(--teal);margin-top:2px;flex-shrink:0}
 @media(max-width:720px){.call-layout{grid-template-columns:1fr}.call-layout>.panel:nth-child(3){grid-column:auto}.confirm-grid{grid-template-columns:1fr}}
+
+/* Private family recording workspace */
+.family-recorder{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:18px 0}.family-camera{height:300px}.family-camera video{width:100%;height:100%;object-fit:contain;background:#020910}.family-field{min-height:46px;resize:none}.family-consent{margin:15px 0;align-items:flex-start}.family-consent input{accent-color:var(--teal);margin-top:3px;flex-shrink:0}.family-guide{display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:11px 15px;border:1px solid var(--line);border-radius:8px;color:var(--teal);font-size:12px;font-weight:700}.family-recorder .privacy{line-height:1.6}@media(max-width:720px){.family-recorder{grid-template-columns:1fr}.family-camera{height:245px}}
