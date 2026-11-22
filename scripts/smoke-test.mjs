@@ -27,12 +27,12 @@ const required = [
   ["camera track cleanup", /getTracks\(\)\.forEach\(t=>t\.stop\(\)\)/],
   ["speech recognition error handling", /r\.onerror/],
   ["speech synthesis fallback", /speechSynthesis/],
-  ["translation limitation disclosure", /MODEL NOT CONNECTED/],
+  ["translation limitation disclosure", /MODEL NOT CONNECTED/],\n  ["iPhone-compatible media recorder formats", /video\\/mp4/],\n  ["family camera preview attachment lifecycle", /videoRef\\.current&&streamRef\\.current/],
   ["conversation confirmation warning", /Confirm, don't guess/]
 ];
 for (const [label, pattern] of required) {
   if (!pattern.test(app)) throw new Error(`Safety smoke check failed: ${label}`);
 }
 
-const files = readdirSync(dist);
-console.log(`SIGNBRIDGE smoke test passed: index, ${assets.length} assets, PWA files and ${required.length} source safeguards.`);
+const sw = readFileSync(join(dist, "sw.js"), "utf8");\nif (!sw.includes("cache.put(request,response.clone())")) throw new Error("Service worker does not cache fetched app assets for offline use");\nif (!sw.includes("signbridge-shell-v3")) throw new Error("Expected updated service worker cache version");\n\nconst files = readdirSync(dist);
+console.log(`SIGNBRIDGE smoke test passed: index, ${assets.length} assets, PWA files and ${required.length} source safeguards and offline asset caching.`);
