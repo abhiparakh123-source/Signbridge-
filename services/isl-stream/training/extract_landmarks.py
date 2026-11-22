@@ -10,6 +10,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,24 @@ HAND_COUNT = 21
 POSE_WIDTH = 5  # x, y, z, visibility, presence
 XYZ_WIDTH = 3
 FEATURE_DIM = POSE_COUNT * POSE_WIDTH + FACE_COUNT * XYZ_WIDTH + 2 * HAND_COUNT * XYZ_WIDTH + 4
+
+
+def sampling_stride(source_fps: float, max_fps: float) -> int:
+    """Choose a stride that never intentionally samples faster than max_fps."""
+    if not np.isfinite(source_fps) or source_fps <= 0:
+        raise ValueError("source_fps must be finite and positive")
+    if not np.isfinite(max_fps) or max_fps <= 0:
+        raise ValueError("max_fps must be finite and positive")
+    return max(1, int(math.ceil(source_fps / max_fps)))
+
+
+def safe_clip_filename(clip_id: str) -> str:
+    """Make a deterministic filename and reject IDs with no safe characters."""
+    safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in clip_id.strip())
+    safe = safe.strip("_")
+    if not safe:
+        raise ValueError("clip_id must contain at least one letter or digit")
+    return safe
 
 
 def _landmark_values(container, count: int, width: int, fields: tuple[str, ...]) -> tuple[np.ndarray, bool]:
@@ -72,7 +91,7 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
     source_fps = capture.get(cv2.CAP_PROP_FPS)
     if not source_fps or source_fps <= 0:
         source_fps = max_fps
-    stride = max(1, int(round(source_fps / max_fps)))
+    stride = sampling_stride(float(source_fps), max_fps)
     frames = []
     frame_index = 0
     try:
@@ -137,8 +156,14 @@ def main() -> int:
     output_manifest.parent.mkdir(parents=True, exist_ok=True)
     output_rows = []
     failures = []
+    seen_clip_ids = set()
+    seen_output_names = set()
     for row in rows:
         clip_id = row["clip_id"].strip()
+        if not clip_id or clip_id in seen_clip_ids:
+            failures.append({"clip_id": clip_id, "error": "clip_id is empty or duplicated"})
+            continue
+        seen_clip_ids.add(clip_id)
         consent = row["consent"].strip().lower()
         if consent not in {"yes", "true", "1"}:
             failures.append({"clip_id": clip_id, "error": "explicit consent is required"})
@@ -156,7 +181,15 @@ def main() -> int:
         if not video_path.is_relative_to(root) or not video_path.is_file():
             failures.append({"clip_id": clip_id, "error": "video path missing or outside dataset root"})
             continue
-        safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in clip_id)
+        try:
+            safe_id = safe_clip_filename(clip_id)
+        except ValueError as exc:
+            failures.append({"clip_id": clip_id, "error": str(exc)})
+            continue
+        if safe_id in seen_output_names:
+            failures.append({"clip_id": clip_id, "error": "clip_id collides with another sanitized output filename"})
+            continue
+        seen_output_names.add(safe_id)
         feature_rel = Path("features") / f"{safe_id}.npy"
         feature_path = root / feature_rel
         try:
@@ -184,7 +217,8 @@ def main() -> int:
         "feature_dim": FEATURE_DIM,
         "output_manifest": str(output_manifest),
         "failures": failures,
-        "note": "Landmarks are inputs for research only, not sign translations. Review every label and evaluate with unseen signers.",
+        "max_fps": args.max_fps,
+        "note": "Landmarks are inputs for research only, not sign translations. Review every label and evaluate with unseen signers. Sampling uses a ceiling stride and may be lower than the requested maximum.",
     }
     print(json.dumps(summary, indent=2))
     return 1 if failures else 0
