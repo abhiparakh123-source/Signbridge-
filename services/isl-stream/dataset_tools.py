@@ -16,6 +16,15 @@ SIGN_LANGUAGES = {"ISL", "ASL", "BSL"}
 SPLITS = {"train", "validation", "test"}
 
 
+def _sha256_file(path: Path) -> str:
+    """Hash a clip incrementally so large private videos are never loaded at once."""
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def validate(manifest: Path, root: Path) -> list[str]:
     errors: list[str] = []
     seen_ids: set[str] = set()
@@ -78,7 +87,7 @@ def validate(manifest: Path, root: Path) -> list[str]:
                         else:
                             seen_paths[candidate] = line
                         try:
-                            digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                            digest = _sha256_file(candidate)
                         except OSError as exc:
                             errors.append(prefix + f"cannot read video file: {exc}")
                         else:
