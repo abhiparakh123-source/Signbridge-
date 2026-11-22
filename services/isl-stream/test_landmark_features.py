@@ -4,7 +4,9 @@ import unittest
 
 import numpy as np
 
-from training.extract_landmarks import (\n    FEATURE_DIM, pack_landmarks, safe_clip_filename, sampling_stride,\n)
+from training.extract_landmarks import (
+    FEATURE_DIM, pack_landmarks, safe_clip_filename, sampling_stride,
+)
 
 
 def points(count, **values):
