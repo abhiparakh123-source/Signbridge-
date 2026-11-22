@@ -23,7 +23,7 @@ Use a telephony provider that can originate/receive PSTN calls and stream the li
 6. Let the Deaf caller type a reply; translate it only after user review, then synthesise it and return audio to the call.
 7. Keep an auditable, user-controlled stop/end-call action and avoid retaining raw audio by default.
 
-Twilio Media Streams is one possible technical route: its bidirectional stream can receive call audio and send audio back into the call over a secure WebSocket. It requires a Programmable Voice account, a public WSS backend, signature validation and a separate STT/translation/TTS pipeline. Provider availability, destination-country restrictions, phone-number eligibility and per-minute charges must be checked before choosing it. See https://www.twilio.com/docs/voice/media-streams and https://www.twilio.com/docs/voice/media-streams/websocket-messages.
+Provider research now identifies Exotel AgentStream as the leading India-first candidate: its documented Connect Voice AI API accepts an Indian destination, an ExoPhone caller ID and a bidirectional WSS stream. This is not yet selected or connected; personal/family account eligibility, KYC, feature enablement, destination reachability and all charges must first be confirmed directly with Exotel. Twilio and Plivo have India-specific caller-ID/business-registration constraints that may make them less suitable. See [provider evaluation](india-telephony-provider-evaluation.md).
 
 This route requires a telephony provider account and credentials. Credentials must be stored as backend secrets, never in the React app, APK, repository or browser.
 
@@ -45,7 +45,7 @@ Keep the phone's native dialler for ordinary calls. SIGNBRIDGE can still prepare
 
 ## Dependencies before a live PSTN bridge can be enabled
 
-- User-selected telephony provider and an account that is permitted to call the intended destination country.
+- User-selected telephony provider and an account that is permitted to call the intended destination country. Exotel is currently the leading India-first candidate, pending confirmation of individual/family eligibility, KYC, bidirectional-stream enablement and pricing.
 - Provider phone number / caller ID and funded account (provider usage may cost money).
 - Public HTTPS + WSS backend endpoint and production secret storage.
 - Provider webhook signature validation and user authentication.
@@ -53,4 +53,4 @@ Keep the phone's native dialler for ordinary calls. SIGNBRIDGE can still prepare
 - End-to-end tests with both sides consenting, including interruptions, accents, numbers, names, poor network and call termination.
 - Privacy notice and explicit in-call consent.
 
-Until these dependencies are configured and tested, the phone integration status must remain `not_connected`.
+The same backend and call flow are intended to serve Android and iPhone clients. The iPhone client can initially be the responsive web/PWA; native iOS packaging is optional and does not remove the provider/backend requirement. Safari/PWA camera, microphone, audio playback, foreground/background and interruption behaviour must be tested on real iPhones.\n\nUntil these dependencies are configured and tested, the phone integration status must remain `not_connected`.
