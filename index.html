@@ -1,1 +1,40 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#071426"/><meta name="description" content="SIGNBRIDGE — making every conversation accessible."/><link rel="manifest" href="/manifest.webmanifest"/><link rel="icon" href="/signbridge-mark.svg" type="image/svg+xml"/><title>SIGNBRIDGE — Every voice. Every sign.</title></head><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071426" />
+    <meta name="description" content="SIGNBRIDGE — making every conversation accessible." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/signbridge-mark.svg" type="image/svg+xml" />
+    <title>SIGNBRIDGE — Every voice. Every sign.</title>
+    <style>
+      html,body{margin:0;min-height:100%;background:#071426;color:#edf4f7;font-family:system-ui,sans-serif}
+      #startup{min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;text-align:center}
+      #startup section{max-width:440px}
+      #startup h1{font-size:28px;margin:0 0 10px;color:#48e2d0}
+      #startup p{color:#a9bdca;line-height:1.6}
+      #startup code{color:#f4c66a;overflow-wrap:anywhere}
+    </style>
+  </head>
+  <body>
+    <div id="root"><div id="startup"><section><h1>SIGNBRIDGE</h1><p>Starting your accessibility workspace…</p></section></div></div>
+    <script>
+      (function () {
+        function showError(message) {
+          var root = document.getElementById("root");
+          if (!root) return;
+          root.innerHTML = '<div id="startup"><section><h1>SIGNBRIDGE could not start</h1><p>The page loaded, but its app code reported an error. Please send this message to support:</p><p><code></code></p><p>Try opening this page in Chrome and refreshing once.</p></section></div>';
+          root.querySelector("code").textContent = String(message || "Unknown startup error");
+        }
+        window.addEventListener("error", function (event) {
+          showError(event.message || (event.filename + ":" + event.lineno));
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          showError(event.reason && (event.reason.stack || event.reason.message) || event.reason);
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
