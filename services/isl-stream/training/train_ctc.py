@@ -183,18 +183,32 @@ def main():
         raise ValueError("training split has no gloss vocabulary")
     vocabulary = {"<blank>": 0, **{token: i + 1 for i, token in enumerate(vocabulary_tokens)}}
     feature_dim = None
-    for row in train_rows:
+    # Preflight every split before training. This catches held-out gloss tokens,
+    # corrupt arrays and shape mismatches before a DataLoader fails mid-run.
+    for row in rows:
         array = np.load(row["_path"], mmap_mode="r", allow_pickle=False)
-        if array.ndim != 2 or array.shape[0] < 1:
-            raise ValueError(f"invalid feature shape for {row['clip_id']}")
+        if array.ndim != 2 or array.shape[0] < 1 or array.shape[1] < 1:
+            raise ValueError(f"invalid feature shape for clip {row['clip_id']}")
+        if not np.isfinite(array).all():
+            raise ValueError(f"non-finite feature values in clip {row['clip_id']}")
         feature_dim = feature_dim or int(array.shape[1])
         if int(array.shape[1]) != feature_dim:
-            raise ValueError("feature dimensions differ across clips")
-        unknown = set(row["_gloss"].split()) - vocabulary.keys()
+            raise ValueError(f"feature dimensions differ across splits (clip {row['clip_id']})")
+        tokens = row["_gloss"].split()
+        unknown = set(tokens) - vocabulary.keys()
         if unknown:
-            raise ValueError("training vocabulary construction failed")
+            raise ValueError(
+                f"clip {row['clip_id']} in {row['_split']} split contains gloss tokens "
+                f"not present in training vocabulary: {sorted(unknown)}. "
+                "Add reviewed training examples or correct the label; do not leak test signers into training."
+            )
+        minimum_frames = len(tokens) + sum(
+            left == right for left, right in zip(tokens, tokens[1:])
+        )
+        if minimum_frames > array.shape[0]:
+            raise ValueError(f"clip {row['clip_id']} has too few frames for a valid CTC alignment")
     if feature_dim is None:
-        raise ValueError("no training feature arrays found")
+        raise ValueError("no feature arrays found")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LandmarkCTCModel(feature_dim, len(vocabulary)).to(device)
