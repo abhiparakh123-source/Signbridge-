@@ -113,3 +113,10 @@ The incremental CTC decoder rejects non-integer frame IDs instead of silently tr
 ## Experimental causal prefix emissions
 
 The training inference module exposes `iter_causal_predictions(chunks, model, device, vocabulary)` for experiments that feed landmark arrays in successive chunks. It yields only newly decoded gloss tokens and carries CTC repeat state across chunk boundaries. The model recomputes the full accumulated prefix on every chunk; this is computationally expensive and retains the full sequence. It is not a cached, bounded-memory, production streaming implementation and is not connected to the live camera service. Only causal checkpoints are accepted.
+
+
+## Bounded causal inference experiment
+
+`training/inference.py` now includes `iter_bounded_causal_predictions`. It runs a causal checkpoint over the bounded windows, skips overlap frames already emitted, and carries CTC repeat state between newly decoded regions. The optional PyTorch tests use a deterministic token-echo model to verify overlap de-duplication and CTC state across window boundaries.
+
+This is a more bounded experiment than full-prefix recomputation, but it is still not a production streaming Transformer: each window is independently evaluated, positional context restarts at each window, and there is no cached attention state. Boundary accuracy and sentence continuity are unknown until trained-model evaluation. The live service remains disabled and must not claim recognition is available.
