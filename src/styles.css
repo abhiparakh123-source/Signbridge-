@@ -49,3 +49,14 @@
 @keyframes statusPulse{0%,100%{box-shadow:0 0 0 0 #48e2d055}50%{box-shadow:0 0 0 7px #48e2d000}}
 @keyframes toastEnter{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(prefers-reduced-motion:reduce){.hero:before,.hero:after,.halo,.gesture,.gesture:before,.float,.wave i,.eyebrow i,.toast{animation:none!important}.feature,.panel,.help,.lesson,.board-choice{transition:none!important}}
+
+/* Call Assist workspace */
+.call-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:18px 0}
+.call-layout>.panel:nth-child(3){grid-column:1/-1}
+.call-layout .board-display{min-height:130px;font-size:19px}
+.call-link{display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;margin:8px 0}
+.call-link.disabled{opacity:.45;pointer-events:none}
+.confirm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.confirm-item{display:flex;gap:9px;align-items:flex-start;background:#071827;border:1px solid var(--line);border-radius:8px;padding:12px;color:#dce9ed;font-size:12px;line-height:1.45}
+.confirm-item input{accent-color:var(--teal);margin-top:2px;flex-shrink:0}
+@media(max-width:720px){.call-layout{grid-template-columns:1fr}.call-layout>.panel:nth-child(3){grid-column:auto}.confirm-grid{grid-template-columns:1fr}}
