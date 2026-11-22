@@ -26,6 +26,19 @@ def _number(record: dict[str, Any], key: str, *, required: bool = False) -> floa
     return result
 
 
+def _count(record: dict[str, Any], key: str) -> int:
+    """Read an exact non-negative integer frame counter."""
+    value = record.get(key, 0)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{key} must be a non-negative integer")
+    if isinstance(value, float) and (not math.isfinite(value) or not value.is_integer()):
+        raise ValueError(f"{key} must be a non-negative integer")
+    result = int(value)
+    if result < 0:
+        raise ValueError(f"{key} must be a non-negative integer")
+    return result
+
+
 def _percentile(values: list[float], percentile: float) -> float | None:
     if not values:
         return None
@@ -65,14 +78,11 @@ def summarize_latency(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             previous = timestamp
 
         phrase_count += int(phrase_has_latency)
-        captured_frames = _number(record, "captured_frames")
-        dropped_frames = _number(record, "dropped_frames")
-        if captured_frames is not None and not captured_frames.is_integer():
-            raise ValueError(f"record {index}: captured_frames must be an integer")
-        if dropped_frames is not None and not dropped_frames.is_integer():
-            raise ValueError(f"record {index}: dropped_frames must be an integer")
-        captured_total += int(captured_frames or 0)
-        dropped_total += int(dropped_frames or 0)
+        try:
+            captured_total += _count(record, "captured_frames")
+            dropped_total += _count(record, "dropped_frames")
+        except ValueError as exc:
+            raise ValueError(f"record {index}: {exc}") from None
 
     if dropped_total > captured_total:
         raise ValueError("dropped_frames cannot exceed captured_frames")
