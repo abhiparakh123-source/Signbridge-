@@ -21,6 +21,8 @@ This checklist tracks what exists in the repository versus what still requires r
 - [ ] Confirm family members' signing languages and regional ISL variation; keep ISL, ASL and BSL datasets separate.
 - [ ] Build reproducible video-to-landmark extraction for both hands, upper-body pose and face/non-manual cues.
 - [ ] Build dataset quality review with fluent signer confirmation of every label.
+- [x] Add an experimental, single-language landmark Transformer + CTC training scaffold with signer-split and consent checks.
+- [ ] Extract and quality-review real landmark sequences; the feature manifest template contains placeholders only.
 - [ ] Reproduce a continuous ISL baseline and record signer-independent WER/CER and sentence-level human review.
 - [ ] Train/fine-tune a streaming temporal model with incremental, revisable hypotheses.
 - [ ] Calibrate confidence and abstention on unseen signers; do not equate model confidence with correctness.
