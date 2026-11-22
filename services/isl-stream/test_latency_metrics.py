@@ -56,6 +56,23 @@ class LatencyMetricsTests(unittest.TestCase):
                 "captured_frames": 2.5,
             }])
 
+    def test_preserves_large_integer_frame_counters_exactly(self):
+        result = summarize_latency([{
+            "captured_at_ms": 0,
+            "captured_frames": 2**60,
+            "dropped_frames": 2**59,
+        }])
+        self.assertEqual(result["captured_frames"], 2**60)
+        self.assertEqual(result["dropped_frames"], 2**59)
+        self.assertEqual(result["dropped_frame_percent"], 50.0)
+
+    def test_rejects_negative_frame_counters(self):
+        with self.assertRaisesRegex(ValueError, "non-negative integer"):
+            summarize_latency([{
+                "captured_at_ms": 0,
+                "captured_frames": -1,
+            }])
+
 
 if __name__ == "__main__":
     unittest.main()
