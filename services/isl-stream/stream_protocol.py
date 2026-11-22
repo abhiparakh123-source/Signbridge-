@@ -55,8 +55,8 @@ def validate_frame_message(
     # Check the actual container signature; a client-supplied MIME label alone
     # must not decide which image decoder handles untrusted bytes.
     signatures = {
-        "image/jpeg": raw.startswith(b"\\xff\\xd8\\xff"),
-        "image/png": raw.startswith(b"\\x89PNG\\r\\n\\x1a\\n"),
+        "image/jpeg": raw.startswith(b"\xff\xd8\xff"),
+        "image/png": raw.startswith(b"\x89PNG\r\n\x1a\n"),
         "image/webp": (
             len(raw) >= 12 and raw.startswith(b"RIFF") and raw[8:12] == b"WEBP"
         ),
