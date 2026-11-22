@@ -23,7 +23,7 @@ class LandmarkPackingTests(unittest.TestCase):
         )
         vector = pack_landmarks(result)
         self.assertEqual(vector.shape, (FEATURE_DIM,))
-        self.assertEqual(FEATURE_DIM, 1825)
+        self.assertEqual(FEATURE_DIM, 1699)
         self.assertTrue(np.isfinite(vector).all())
         self.assertEqual(float(vector[-4:].sum()), 0.0)
 
@@ -35,7 +35,7 @@ class LandmarkPackingTests(unittest.TestCase):
             right_hand_landmarks=None,
         )
         vector = pack_landmarks(result)
-        self.assertEqual(vector.shape, (1825,))
+        self.assertEqual(vector.shape, (1699,))
         self.assertEqual(vector[-4:].tolist(), [1.0, 1.0, 1.0, 0.0])
         self.assertAlmostEqual(float(vector[0]), 0.4)
         self.assertTrue(np.isfinite(vector).all())
