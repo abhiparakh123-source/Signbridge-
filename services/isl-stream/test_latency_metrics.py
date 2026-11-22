@@ -50,7 +50,7 @@ class LatencyMetricsTests(unittest.TestCase):
             }])
 
     def test_rejects_fractional_frame_counts(self):
-        with self.assertRaisesRegex(ValueError, "must be an integer"):
+        with self.assertRaisesRegex(ValueError, "non-negative integer"):
             summarize_latency([{
                 "captured_at_ms": 0,
                 "captured_frames": 2.5,
