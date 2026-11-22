@@ -1,0 +1,6 @@
+# Optional research/training dependencies (Python 3.11 recommended).
+# Install separately from the lightweight API requirements.txt.
+numpy>=1.26,<2.0
+torch>=2.2,<3.0
+opencv-python-headless>=4.10,<5.0
+mediapipe==0.10.21
