@@ -41,6 +41,7 @@ def summarize_latency(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     stable: list[float] = []
     translated: list[float] = []
     captured_total = dropped_total = 0
+    phrase_count = 0
 
     for index, record in enumerate(records, start=1):
         if not isinstance(record, dict):
@@ -52,6 +53,7 @@ def summarize_latency(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             ("translated_at_ms", translated),
         )
         previous = captured
+        phrase_has_latency = False
         for key, output in stages:
             timestamp = _number(record, key)
             if timestamp is None:
@@ -59,8 +61,10 @@ def summarize_latency(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             if timestamp < previous:
                 raise ValueError(f"record {index}: {key} must not precede the previous stage")
             output.append(timestamp - captured)
+            phrase_has_latency = True
             previous = timestamp
 
+        phrase_count += int(phrase_has_latency)
         captured_frames = _number(record, "captured_frames")
         dropped_frames = _number(record, "dropped_frames")
         if captured_frames is not None and not captured_frames.is_integer():
@@ -74,7 +78,7 @@ def summarize_latency(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
         raise ValueError("dropped_frames cannot exceed captured_frames")
     denominator = captured_total
     return {
-        "phrases": len(provisional) or len(stable) or len(translated),
+        "phrases": phrase_count,
         "first_provisional_latency_ms": {
             "p50": _percentile(provisional, 0.50),
             "p95": _percentile(provisional, 0.95),
