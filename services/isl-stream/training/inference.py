@@ -18,9 +18,25 @@ def load_model(checkpoint_path: Path, device: torch.device):
     vocabulary = checkpoint.get("vocabulary")
     if not isinstance(vocabulary, dict) or vocabulary.get("<blank>") != 0:
         raise ValueError("checkpoint vocabulary is invalid")
+    token_ids = list(vocabulary.values())
+    if (
+        any(not isinstance(token, str) or not token for token in vocabulary)
+        or any(isinstance(index, bool) or not isinstance(index, int) for index in token_ids)
+        or sorted(token_ids) != list(range(len(vocabulary)))
+        or len(set(token_ids)) != len(token_ids)
+    ):
+        raise ValueError("checkpoint vocabulary IDs must be unique, contiguous integers")
+    feature_dim = checkpoint.get("feature_dim")
+    if isinstance(feature_dim, bool) or not isinstance(feature_dim, int) or feature_dim < 1:
+        raise ValueError("checkpoint feature_dim must be a positive integer")
+    language = checkpoint.get("sign_language")
+    if language not in {"ISL", "ASL", "BSL"}:
+        raise ValueError("checkpoint sign_language metadata is invalid")
     architecture = checkpoint.get("architecture", {})
+    if not isinstance(architecture, dict):
+        raise ValueError("checkpoint architecture metadata is invalid")
     model = LandmarkCTCModel(
-        feature_dim=int(checkpoint["feature_dim"]),
+        feature_dim=feature_dim,
         vocabulary_size=len(vocabulary),
         width=int(architecture.get("width", 256)),
         heads=int(architecture.get("heads", 4)),
@@ -68,7 +84,9 @@ def main():
     if checkpoint.get("sign_language") != args.language:
         parser.error("checkpoint language does not match requested language")
     features = np.load(args.features, allow_pickle=False)
-    if features.shape[-1] != int(checkpoint["feature_dim"]):
+    if features.ndim != 2 or features.shape[0] < 1:
+        parser.error("features must be a non-empty [frames,feature_dim] array")
+    if features.shape[1] != int(checkpoint["feature_dim"]):
         parser.error("feature dimensions do not match this checkpoint")
     gloss = predict(features, model, device, vocabulary)
     print(json.dumps({
