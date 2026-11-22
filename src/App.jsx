@@ -1,4 +1,4 @@
-import{useEffect,useRef,useState}from"react";import{Activity,ArrowRight,AudioLines,BookOpen,Camera,Check,ChevronRight,Copy,Globe2,Hand,Heart,Languages,Menu,Mic,MicOff,MessageCircle,MessageSquareText,Play,ShieldCheck,Sparkles,Volume2,X}from"lucide-react";
+import React,{useEffect,useRef,useState}from"react";import{Activity,ArrowRight,AudioLines,BookOpen,Camera,Check,ChevronRight,Copy,Globe2,Hand,Heart,Languages,Menu,Mic,MicOff,MessageCircle,MessageSquareText,Play,ShieldCheck,Sparkles,Volume2,X}from"lucide-react";
 const LANGS=["Indian Sign Language (ISL)","American Sign Language (ASL)","British Sign Language (BSL)"];
 const HELP=[["I need help, please.","🆘"],["Please call an ambulance.","🚑"],["I am deaf / hard of hearing.","🦻"],["Please write it down.","✍️"],["I need an interpreter.","🤝"],["Where is the nearest hospital?","🏥"]];
 const LESSONS=[["Everyday greetings","Hello, thank you, please and goodbye.","5 min","👋"],["People & introductions","Introduce yourself and meet someone new.","8 min","🤝"],["Numbers 1–10","Build confidence with the basics.","6 min","🔢"],["Useful everyday phrases","Make simple requests and share needs.","10 min","💬"]];
