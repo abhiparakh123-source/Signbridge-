@@ -82,11 +82,22 @@ def validate_hypothesis(
     confidence = message.get("confidence")
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
         raise ProtocolError("confidence must be a number from 0 to 1")
-    if not math.isfinite(confidence) or not 0 <= confidence <= 1:
+    try:
+        confidence_value = float(confidence)
+    except (OverflowError, ValueError):
+        raise ProtocolError("confidence must be a finite number from 0 to 1") from None
+    if not math.isfinite(confidence_value) or not 0 <= confidence_value <= 1:
         raise ProtocolError("confidence must be a finite number from 0 to 1")
-    if (isinstance(min_speak_confidence, bool) or not isinstance(min_speak_confidence, (int, float)) or not math.isfinite(min_speak_confidence) or not 0 <= min_speak_confidence <= 1):
+
+    if isinstance(min_speak_confidence, bool) or not isinstance(min_speak_confidence, (int, float)):
         raise ProtocolError("min_speak_confidence must be a finite number between 0 and 1")
-    can_speak = state == "stable" and confidence >= min_speak_confidence
+    try:
+        threshold = float(min_speak_confidence)
+    except (OverflowError, ValueError):
+        raise ProtocolError("min_speak_confidence must be a finite number between 0 and 1") from None
+    if not math.isfinite(threshold) or not 0 <= threshold <= 1:
+        raise ProtocolError("min_speak_confidence must be a finite number between 0 and 1")
+    can_speak = state == "stable" and confidence_value >= threshold
     return {
         "type": "hypothesis",
         "sign_language": language,
