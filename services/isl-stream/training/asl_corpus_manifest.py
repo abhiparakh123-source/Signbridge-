@@ -32,6 +32,7 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
 
     for line, row in enumerate(rows, start=2):
         prefix = f"Line {line}: "
+        errors_before_row = len(errors)
         values = {key: (row.get(key) or "").strip() for key in REQUIRED}
         missing = sorted(key for key, value in values.items() if not value)
         if missing:
@@ -76,7 +77,8 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
         if not values["license_id"] or not values["attribution"] or not values["source_url"].startswith(("https://", "http://")):
             errors.append(prefix + "license, attribution and source URL must be recorded")
 
-        if not errors or not any(error.startswith(prefix) for error in errors):
+        # Count each row independently; earlier invalid rows must not affect later rows.
+        if len(errors) == errors_before_row:
             usable += 1
 
     for signer, splits in signer_splits.items():
