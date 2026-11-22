@@ -50,6 +50,28 @@ class DatasetManifestTests(unittest.TestCase):
         self.write_rows([self.row(video_path="../outside.webm")])
         self.assertTrue(any("stay inside" in e for e in validate(self.manifest, self.root)))
 
+    def test_reused_video_path_is_rejected(self):
+        self.write_rows([
+            self.row(clip_id="a", split="train"),
+            self.row(clip_id="b", split="test"),
+        ])
+        errors = validate(self.manifest, self.root)
+        self.assertTrue(any("video file is reused" in e for e in errors))
+
+    def test_duplicate_video_content_is_rejected_across_paths(self):
+        (self.root / "clips" / "b.webm").write_bytes(b"test")
+        self.write_rows([
+            self.row(clip_id="a", video_path="clips/a.webm", split="train"),
+            self.row(clip_id="b", video_path="clips/b.webm", split="test"),
+        ])
+        errors = validate(self.manifest, self.root)
+        self.assertTrue(any("video content duplicates" in e for e in errors))
+
+    def test_empty_video_is_rejected(self):
+        (self.root / "clips" / "a.webm").write_bytes(b"")
+        self.write_rows([self.row()])
+        self.assertTrue(any("video file is empty" in e for e in validate(self.manifest, self.root)))
+
 
 if __name__ == "__main__":
     unittest.main()
