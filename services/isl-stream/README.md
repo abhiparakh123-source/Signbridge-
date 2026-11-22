@@ -36,3 +36,9 @@ Never speak an uncertain hypothesis as a confirmed sentence. Critical details (n
 ## Multiple sign languages
 
 The family manifest requires `sign_language` with one of `ISL`, `ASL`, or `BSL`. Labels and model training must remain language-specific; never pool identical-looking gloss labels across languages without expert-reviewed mapping. The recorder downloads local clips tagged with the selected language. No sign recognition model is configured yet.
+
+## Streaming protocol groundwork
+
+`stream_protocol.py` defines strict validation for a future frame envelope and incremental model hypotheses. It checks language tags, monotonically increasing timestamps, image MIME types, base64 validity and a 2 MiB frame limit. It also prevents speech playback for provisional, uncertain or below-threshold hypotheses.
+
+This is deliberately not wired to the WebSocket yet: without a real inference model, accepting camera frames would create the appearance of a working translator without producing reliable meaning. The 0.90 speech threshold is a conservative engineering default for gating, not a calibrated accuracy guarantee. It must be calibrated against held-out signer data before use.
