@@ -8,10 +8,16 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from model import LandmarkCTCModel
-from checkpoint_validation import validate_checkpoint_metadata
-from ctc_decode import decode_frame_ids_incremental
-from chunking import iter_bounded_windows
+try:  # Package import for tests and service integration.
+    from .model import LandmarkCTCModel
+    from .checkpoint_validation import validate_checkpoint_metadata
+    from .ctc_decode import decode_frame_ids_incremental
+    from .chunking import iter_bounded_windows
+except ImportError:  # Direct script execution from the training directory.
+    from model import LandmarkCTCModel
+    from checkpoint_validation import validate_checkpoint_metadata
+    from ctc_decode import decode_frame_ids_incremental
+    from chunking import iter_bounded_windows
 
 
 def load_model(checkpoint_path: Path, device: torch.device):
