@@ -6,19 +6,33 @@ const indexPath = join(dist, "index.html");
 if (!existsSync(indexPath)) throw new Error("Build output is missing dist/index.html");
 
 const html = readFileSync(indexPath, "utf8");
-const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(match => match[1]);
-if (assets.length === 0) throw new Error("No JavaScript or CSS assets are referenced by the built page");
+const assets = [...html.matchAll(/(?:src|href)="([^"]+\\.(?:js|css))"/g)].map(match => match[1]);
+if (assets.length < 2) throw new Error("Expected built JavaScript and CSS assets to be referenced by the page");
 
 for (const asset of assets) {
-  const path = join(dist, asset.replace(/^\//, ""));
+  const path = join(dist, asset.replace(/^\\//, ""));
   if (!existsSync(path)) throw new Error(`Built asset is missing: ${asset}`);
-  if (asset.endsWith(".js") && readFileSync(path, "utf8").length < 100) {
-    throw new Error(`JavaScript bundle appears unexpectedly small: ${asset}`);
-  }
+  if (readFileSync(path, "utf8").length < 100) throw new Error(`Built asset appears unexpectedly small: ${asset}`);
+}
+
+for (const file of ["manifest.webmanifest", "sw.js"]) {
+  if (!existsSync(join(dist, file))) throw new Error(`PWA file is missing: ${file}`);
+}
+
+// Guard important user-facing safety and device-cleanup behaviours against accidental removal.
+const app = readFileSync("src/App.jsx", "utf8");
+const required = [
+  ["React import", /import React/],
+  ["camera permission flow", /getUserMedia/],
+  ["camera track cleanup", /getTracks\(\)\.forEach\(t=>t\.stop\(\)\)/],
+  ["speech recognition error handling", /r\.onerror/],
+  ["speech synthesis fallback", /speechSynthesis/],
+  ["translation limitation disclosure", /MODEL NOT CONNECTED/],
+  ["conversation confirmation warning", /Confirm, don't guess/]
+];
+for (const [label, pattern] of required) {
+  if (!pattern.test(app)) throw new Error(`Safety smoke check failed: ${label}`);
 }
 
 const files = readdirSync(dist);
-if (!files.includes("manifest.webmanifest")) throw new Error("PWA manifest is missing");
-if (!files.includes("sw.js")) throw new Error("Service worker is missing");
-
-console.log(`SIGNBRIDGE smoke test passed: index, ${assets.length} referenced assets, manifest and service worker exist.`);
+console.log(`SIGNBRIDGE smoke test passed: index, ${assets.length} assets, PWA files and ${required.length} source safeguards.`);
