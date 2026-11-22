@@ -2,7 +2,7 @@
 
 ## Current implementation boundary
 
-The current `LandmarkCTCModel` is an offline full-sequence Transformer CTC baseline. It consumes pre-extracted MediaPipe landmark arrays and emits experimental gloss tokens. It is not a causal streaming model, it is not trained, and it does not translate ISL sentences into Hindi or English. The FastAPI WebSocket intentionally returns `recognition_unavailable` until a validated runtime model is installed.
+The `LandmarkCTCModel` is an experimental full-sequence Transformer CTC baseline. By default it uses bidirectional attention. An optional `--causal` training mode applies a causal attention mask so each frame output cannot attend to future frames. Both modes still recompute a complete supplied window; causal masking alone does not provide cached incremental inference, bounded-lookahead streaming, or a production real-time model. It consumes pre-extracted MediaPipe landmark arrays and emits experimental gloss tokens. It is not trained and does not translate ISL sentences into Hindi or English. The FastAPI WebSocket intentionally returns `recognition_unavailable` until a validated runtime model is installed.
 
 Do not report camera preview FPS as recognition FPS. Do not infer accuracy or latency from an untrained model.
 
@@ -10,7 +10,7 @@ Do not report camera preview FPS as recognition FPS. Do not infer accuracy or la
 
 1. **Capture:** Camera frames carry monotonically increasing sequence numbers and monotonic timestamps. Adapt capture resolution and sampling rate to device load; never queue an unbounded backlog.
 2. **Preprocess:** Extract pose, both hands, face and non-manual cues. Preserve signer-relative geometry and temporal continuity. Face/hand loss is an explicit missing-data signal, not a guessed pose.
-3. **Temporal recognition:** Use a causal or bounded-lookahead temporal encoder with a rolling context buffer. Process only new frames and keep state between windows. The offline Transformer baseline is a research comparator, not the production streaming model.
+3. **Temporal recognition:** Use a causal or bounded-lookahead temporal encoder with a rolling context buffer. Process only new frames and keep state between windows. The full-window Transformer (including its causal-mask experiment) is a research comparator, not the production streaming model.
 4. **Decode:** Use incremental CTC prefix decoding or another evaluated streaming decoder. Keep provisional hypotheses revisable; commit only when temporal stability and calibrated uncertainty criteria are met.
 5. **Language:** Keep ISL, ASL and BSL as separate model/data pipelines. Never silently route an ASL or BSL stream into an ISL model.
 6. **Translation:** Translate recognised sign-language meaning into Hindi or English in a separate layer. Gloss sequences are not grammatical sentences and must not be read aloud as if they were translations.
