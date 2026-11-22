@@ -118,3 +118,12 @@ Family-recorded clips can be useful for adapting the app to the actual users, bu
 ### Research baseline caveats
 
 The Sid-V5 repository describes an ST-GCN + Transformer + CTC pipeline and reports 30.77% WER on its stated continuous-recognition setup. Its README says MIT, but the repository tree currently has no separate LICENSE file; verify the actual license with the author before copying code. Its README also says local inference requires a GPU with at least 8 GB VRAM, so it is not yet a proven Android-ready runtime. Treat it as an architecture reference, not a drop-in model or a performance guarantee.
+
+
+## On-device perception candidate
+
+Google MediaPipe Tasks provides Android live-stream hand landmark detection and a generic gesture recognizer. Its live-stream API processes asynchronously and can drop incoming frames when busy, which is preferable to building an ever-growing frame queue. However, the generic gesture model recognises a small predefined set of hand gestures; it is not an ISL translator. Hand landmarks alone also omit important facial, body and grammatical information. Use MediaPipe as a possible real-time feature-extraction component, not as the sign-language model itself. See the official [Hand Landmarker guide](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) and [Gesture Recognizer guide](https://developers.google.com/edge/mediapipe/solutions/vision/gesture_recognizer).
+
+## Family data preparation tools
+
+The `services/isl-stream/family-dataset/` guide and `manifest.template.csv` define a private, local-first recording workflow. `dataset_tools.py` checks consent flags, local file paths, required labels and signer-disjoint splits. It never uploads or decodes videos. Automated tests cover consent, path traversal and signer leakage. These checks make a future family-specific dataset safer to organise; they do not create a trained model or validate the meaning of any sign.
