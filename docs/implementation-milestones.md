@@ -17,13 +17,13 @@ This checklist tracks what exists in the repository versus what still requires r
 
 ### A. Data and model (critical path)
 
-- [ ] Obtain and verify dataset access, attribution and allowed use for ISL research datasets.
+- [ ] Obtain written approval and verify access, attribution and permitted family-prototype use for FDMSE-ISL and/or ISLRTC resources. See [dataset access and licensing plan](isl-dataset-access-and-licensing.md).
 - [ ] Confirm family members' signing languages and regional ISL variation; keep ISL, ASL and BSL datasets separate.
 - [ ] Build reproducible video-to-landmark extraction for both hands, upper-body pose and face/non-manual cues.
 - [ ] Build dataset quality review with fluent signer confirmation of every label.
 - [x] Add an experimental, single-language landmark Transformer + CTC training scaffold with signer-split and consent checks.
 - [ ] Extract and quality-review real landmark sequences; the feature manifest template contains placeholders only.
-- [ ] Reproduce a continuous ISL baseline and record signer-independent WER/CER and sentence-level human review.
+- [ ] Reproduce an isolated-sign FDMSE-ISL baseline (if access is approved); do not treat it as continuous translation.\n- [ ] Obtain/collect rights-cleared continuous ISL sentence data and reproduce a sentence-level baseline with signer-independent WER/CER and expert review.
 - [ ] Train/fine-tune a streaming temporal model with incremental, revisable hypotheses.
 - [ ] Calibrate confidence and abstention on unseen signers; do not equate model confidence with correctness.
 - [ ] Add a Hindi/English sentence translation layer reviewed by fluent ISL users.
@@ -75,4 +75,4 @@ The first pilot should focus on ISL and a clearly bounded set of everyday family
 ## Phone integration engineering decision
 
 The existing SIM-call path is not a call-audio integration. Android reserves cellular call capture sources behind `CAPTURE_AUDIO_OUTPUT`, which is not available to ordinary third-party apps. A real integrated interpreter therefore needs an app-routed PSTN call through a telephony provider with bidirectional media streaming, or a separate-device caption fallback. See [phone integration architecture](phone-integration-architecture.md). No provider has been selected, no credentials are configured, and no live phone interpreter is enabled.
-\n\n## iPhone and cross-platform phone support\n\n- [x] Define a shared backend/provider architecture that does not depend on the caller's mobile operating system.\n- [x] Research India-first telephony candidates and document Exotel as the leading candidate pending account eligibility and cost confirmation.\n- [ ] Verify iPhone Safari/PWA camera and microphone permissions, audio playback, call-screen transitions, background limitations and reconnect behaviour on real devices.\n- [ ] Add native iOS packaging only if device testing shows the web/PWA client is insufficient.\n
+\n\n## iPhone and cross-platform phone support\n\n- [x] Define a shared backend/provider architecture that does not depend on the caller's mobile operating system.\n- [x] Research India-first telephony candidates and document Exotel as the leading candidate pending account eligibility and cost confirmation.\n- [ ] Verify iPhone Safari/PWA camera and microphone permissions, audio playback, call-screen transitions, background limitations and reconnect behaviour on real devices.\n- [ ] Add native iOS packaging only if device testing shows the web/PWA client is insufficient.\n\n\n## Dataset rights and source strategy\n\n- [x] Research and document FDMSE-ISL, ISLRTC Dictionary, ISH-NEWS and continuous fingerspelling resource scope and restrictions.\n- [ ] Obtain written dataset access/permission and document source attribution before any download, preprocessing or training.\n- [ ] Keep isolated-word, fingerspelling and continuous-sentence datasets and evaluation metrics distinct.\n
