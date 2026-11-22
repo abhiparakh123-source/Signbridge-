@@ -13,5 +13,11 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Set up Python for ISL service checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile ISL service scaffold
+        run: python -m compileall -q services/isl-stream
       - run: npm run build
       - run: npm run test:smoke
