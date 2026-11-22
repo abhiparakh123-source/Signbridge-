@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from training.extract_landmarks import FEATURE_DIM, pack_landmarks
+from training.extract_landmarks import (\n    FEATURE_DIM, pack_landmarks, safe_clip_filename, sampling_stride,\n)
 
 
 def points(count, **values):
@@ -39,6 +39,23 @@ class LandmarkPackingTests(unittest.TestCase):
         self.assertEqual(vector[-4:].tolist(), [1.0, 1.0, 1.0, 0.0])
         self.assertAlmostEqual(float(vector[0]), 0.4)
         self.assertTrue(np.isfinite(vector).all())
+
+    def test_sampling_stride_never_exceeds_requested_maximum(self):
+        self.assertEqual(sampling_stride(30, 60), 1)
+        self.assertEqual(sampling_stride(60, 60), 1)
+        self.assertEqual(sampling_stride(80, 60), 2)
+        self.assertEqual(sampling_stride(120, 30), 4)
+
+    def test_sampling_stride_rejects_invalid_rates(self):
+        for source, maximum in [(0, 30), (-1, 30), (30, 0), (float("nan"), 30)]:
+            with self.subTest(source=source, maximum=maximum):
+                with self.assertRaises(ValueError):
+                    sampling_stride(source, maximum)
+
+    def test_clip_filename_is_safe_and_nonempty(self):
+        self.assertEqual(safe_clip_filename("clip 01/left"), "clip_01_left")
+        with self.assertRaises(ValueError):
+            safe_clip_filename(" / ")
 
     def test_wrong_landmark_count_is_rejected(self):
         result = SimpleNamespace(
