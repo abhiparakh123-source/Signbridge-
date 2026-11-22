@@ -60,3 +60,27 @@ python training/train_ctc.py --manifest /private-data/manifest.csv --data-root /
 ```
 
 **Important:** this is an experimental baseline, not a trained model, decoder, Hindi/English sentence translator or real-time service. The training command has not been run because no consented, labelled landmark dataset is present in this repository. The current service must continue reporting recognition unavailable until a model is trained, independently evaluated and integrated.
+
+## Local landmark extraction (optional research step)
+
+Install the separate extraction dependencies:
+
+```bash
+pip install -r requirements-extraction.txt
+```
+
+From a private family dataset folder containing `manifest.csv` and `clips/`, run:
+
+```bash
+python /path/to/Signbridge/services/isl-stream/training/extract_landmarks.py --manifest manifest.csv --data-root . --output-manifest features_manifest.csv --max-fps 60
+```
+
+This uses MediaPipe Holistic to extract a fixed 1,699-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It samples up to the requested frame rate, preserves temporal order, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
+
+Then train one language at a time:
+
+```bash
+python /path/to/Signbridge/services/isl-stream/training/train_ctc.py --manifest features_manifest.csv --data-root . --language ISL --output /private-models/isl-ctc.pt
+```
+
+The training report includes held-out gloss WER/CER and CTC loss. These are research metrics on the supplied split, not proof of sentence-level translation quality or generalisation. A model trained on a tiny family dataset must remain a private experiment and must not be used for safety-critical communication.
