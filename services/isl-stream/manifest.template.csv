@@ -1,5 +1,13 @@
 clip_id,signer_id,sign_language,label,video_path,consent,split
-example-001,parent-a,ISL,HELLO,clips/example-001.webm,yes,train
-example-002,parent-a,ISL,THANK_YOU,clips/example-002.webm,yes,train
-example-003,parent-b,ISL,HELP,clips/example-003.webm,yes,validation
-example-004,parent-c,ISL,WATER,clips/example-004.webm,yes,test
+train-hello,parent-a,ISL,HELLO,clips/train-hello.webm,yes,train
+train-thanks,parent-a,ISL,THANK_YOU,clips/train-thanks.webm,yes,train
+train-help,parent-a,ISL,HELP,clips/train-help.webm,yes,train
+train-water,parent-a,ISL,WATER,clips/train-water.webm,yes,train
+val-hello,parent-b,ISL,HELLO,clips/val-hello.webm,yes,validation
+val-thanks,parent-b,ISL,THANK_YOU,clips/val-thanks.webm,yes,validation
+val-help,parent-b,ISL,HELP,clips/val-help.webm,yes,validation
+val-water,parent-b,ISL,WATER,clips/val-water.webm,yes,validation
+test-hello,parent-c,ISL,HELLO,clips/test-hello.webm,yes,test
+test-thanks,parent-c,ISL,THANK_YOU,clips/test-thanks.webm,yes,test
+test-help,parent-c,ISL,HELP,clips/test-help.webm,yes,test
+test-water,parent-c,ISL,WATER,clips/test-water.webm,yes,test
