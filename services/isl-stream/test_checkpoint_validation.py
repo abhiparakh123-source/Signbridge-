@@ -22,6 +22,7 @@ class CheckpointValidationTests(unittest.TestCase):
         self.assertEqual(feature_dim, 1699)
         self.assertEqual(language, "ISL")
         self.assertEqual(architecture["dropout"], 0.1)
+        self.assertFalse(architecture["causal"])
 
     def test_rejects_unknown_checkpoint_type(self):
         with self.assertRaisesRegex(ValueError, "checkpoint type"):
@@ -51,6 +52,21 @@ class CheckpointValidationTests(unittest.TestCase):
     def test_rejects_unhashable_language_metadata_cleanly(self):
         with self.assertRaisesRegex(ValueError, "sign_language"):
             validate_checkpoint_metadata(self.checkpoint(sign_language=[]))
+
+    def test_accepts_causal_architecture_metadata(self):
+        architecture = {
+            "width": 256, "heads": 4, "layers": 4,
+            "dropout": 0.1, "causal": True,
+        }
+        result = validate_checkpoint_metadata(self.checkpoint(architecture=architecture))
+        self.assertTrue(result[3]["causal"])
+
+    def test_rejects_non_boolean_causal_metadata(self):
+        for value in (1, 0, "true", None):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "causal"):
+                validate_checkpoint_metadata(self.checkpoint(
+                    architecture={"causal": value}
+                ))
 
     def test_rejects_invalid_architecture(self):
         for architecture in (
