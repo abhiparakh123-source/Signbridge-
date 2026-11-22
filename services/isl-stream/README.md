@@ -42,3 +42,21 @@ The family manifest requires `sign_language` with one of `ISL`, `ASL`, or `BSL`.
 `stream_protocol.py` defines strict validation for a future frame envelope and incremental model hypotheses. It checks language tags, monotonically increasing timestamps, image MIME types, base64 validity and a 2 MiB frame limit. It also prevents speech playback for provisional, uncertain or below-threshold hypotheses.
 
 This is deliberately not wired to the WebSocket yet: without a real inference model, accepting camera frames would create the appearance of a working translator without producing reliable meaning. The 0.90 speech threshold is a conservative engineering default for gating, not a calibrated accuracy guarantee. It must be calibrated against held-out signer data before use.
+
+## Experimental landmark CTC training baseline
+
+The `training/` folder contains a small PyTorch Transformer + CTC baseline. It consumes pre-extracted, signer-reviewed `.npy` feature sequences, not raw video. Each run is restricted to exactly one sign language (ISL, ASL or BSL), requires explicit consent, checks signer-disjoint train/validation/test splits, and saves the best validation-loss checkpoint plus test loss.
+
+Install optional training dependencies:
+
+```bash
+pip install -r requirements-training.txt
+```
+
+Example, after creating a private feature manifest and extracting features:
+
+```bash
+python training/train_ctc.py --manifest /private-data/manifest.csv --data-root /private-data --language ISL --output /private-models/isl-ctc.pt
+```
+
+**Important:** this is an experimental baseline, not a trained model, decoder, Hindi/English sentence translator or real-time service. The training command has not been run because no consented, labelled landmark dataset is present in this repository. The current service must continue reporting recognition unavailable until a model is trained, independently evaluated and integrated.
