@@ -1,4 +1,13 @@
 clip_id,signer_id,sign_language,feature_path,gloss,consent,split
-example-001,parent-a,ISL,features/example-001.npy,HELLO,yes,train
-example-002,parent-b,ISL,features/example-002.npy,THANK_YOU,yes,validation
-example-003,parent-c,ISL,features/example-003.npy,HELP,yes,test
+train-hello,parent-a,ISL,features/train-hello.npy,HELLO,yes,train
+train-thanks,parent-a,ISL,features/train-thanks.npy,THANK_YOU,yes,train
+train-help,parent-a,ISL,features/train-help.npy,HELP,yes,train
+train-water,parent-a,ISL,features/train-water.npy,WATER,yes,train
+val-hello,parent-b,ISL,features/val-hello.npy,HELLO,yes,validation
+val-thanks,parent-b,ISL,features/val-thanks.npy,THANK_YOU,yes,validation
+val-help,parent-b,ISL,features/val-help.npy,HELP,yes,validation
+val-water,parent-b,ISL,features/val-water.npy,WATER,yes,validation
+test-hello,parent-c,ISL,features/test-hello.npy,HELLO,yes,test
+test-thanks,parent-c,ISL,features/test-thanks.npy,THANK_YOU,yes,test
+test-help,parent-c,ISL,features/test-help.npy,HELP,yes,test
+test-water,parent-c,ISL,features/test-water.npy,WATER,yes,test
