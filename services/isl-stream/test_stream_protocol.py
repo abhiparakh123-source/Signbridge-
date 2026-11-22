@@ -79,6 +79,17 @@ class StreamProtocolTests(unittest.TestCase):
                     "state": "stable", "text": "hello", "confidence": confidence,
                 })
 
+    def test_extremely_large_numeric_values_are_rejected_cleanly(self):
+        message = {
+            "type": "hypothesis", "sign_language": "ISL",
+            "state": "stable", "text": "hello", "confidence": 10 ** 10000,
+        }
+        with self.assertRaises(ProtocolError):
+            validate_hypothesis(message)
+        message["confidence"] = 0.99
+        with self.assertRaises(ProtocolError):
+            validate_hypothesis(message, min_speak_confidence=10 ** 10000)
+
     def test_invalid_speech_threshold_is_rejected(self):
         message = {
             "type": "hypothesis", "sign_language": "ISL",
