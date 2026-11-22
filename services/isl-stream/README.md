@@ -87,6 +87,10 @@ python /path/to/Signbridge/services/isl-stream/training/train_ctc.py --manifest 
 
 The training report includes held-out gloss WER/CER and CTC loss. These are research metrics on the supplied split, not proof of sentence-level translation quality or generalisation. A model trained on a tiny family dataset must remain a private experiment and must not be used for safety-critical communication.
 
+## Bounded landmark windowing experiment
+
+`training/chunking.py` provides a dependency-light `iter_bounded_windows(chunks, max_frames, overlap_frames)` helper. It accepts arbitrary incoming chunk boundaries, emits windows no longer than `max_frames`, retains only the requested overlap, and reports absolute frame offsets. This creates a bounded-context input primitive for future inference work. Each window is an independent context: overlap alone does not stitch CTC tokens, guarantee stable emissions, preserve long-range sentence meaning, or provide a cached transformer. It is not yet connected to the recognition service. Tests cover chunk boundaries, overlap, partial final windows, invalid data and bounds.
+
 ## Training checkpoint integrity
 
 The trainer rejects non-finite model outputs and CTC losses during validation/test evaluation, and refuses to produce metrics from an empty evaluation split. Best checkpoints are written to a temporary file in the destination directory and atomically replaced only after the write succeeds, so an interrupted save does not leave a partially written checkpoint at the expected path. This protects artifact integrity; it does not improve model accuracy.
