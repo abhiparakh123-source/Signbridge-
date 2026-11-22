@@ -42,8 +42,13 @@ def load_manifest(path: Path, root: Path, language: str):
             raise ValueError(f"invalid signer or split for clip {clip_id}")
         if row["consent"].strip().lower() not in {"yes", "true", "1"}:
             raise ValueError(f"clip {clip_id} has no explicit consent")
-        if row["sign_language"].strip().upper() != language:
-            raise ValueError(f"manifest must contain only {language} clips for this run")
+        row_language = row["sign_language"].strip().upper()
+        if row_language not in {"ISL", "ASL", "BSL"}:
+            raise ValueError(f"invalid sign language for clip {clip_id}")
+        # Extraction can produce one combined feature manifest. A training run
+        # intentionally selects exactly one language; skip other valid languages.
+        if row_language != language:
+            continue
         previous = signer_splits.setdefault(signer, split)
         if previous != split:
             raise ValueError(f"signer {signer} appears in multiple splits")
