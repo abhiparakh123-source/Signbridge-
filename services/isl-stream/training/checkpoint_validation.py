@@ -24,7 +24,7 @@ def validate_checkpoint_metadata(checkpoint):
         raise ValueError("checkpoint feature_dim must be a positive integer")
 
     language = checkpoint.get("sign_language")
-    if language not in {"ISL", "ASL", "BSL"}:
+    if not isinstance(language, str) or language not in {"ISL", "ASL", "BSL"}:
         raise ValueError("checkpoint sign_language metadata is invalid")
 
     architecture = checkpoint.get("architecture", {})
