@@ -75,7 +75,7 @@ From a private family dataset folder containing `manifest.csv` and `clips/`, run
 python /path/to/Signbridge/services/isl-stream/training/extract_landmarks.py --manifest manifest.csv --data-root . --output-manifest features_manifest.csv --max-fps 60
 ```
 
-This uses MediaPipe Holistic to extract a fixed 1,699-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It samples up to the requested frame rate, preserves temporal order, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
+This uses MediaPipe Holistic to extract a fixed 1,825-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It samples up to the requested frame rate, preserves temporal order, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
 
 Then train one language at a time:
 
