@@ -19,6 +19,10 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 
 The engineering research, candidate datasets, architecture, licensing checks and release gates for a real continuous ISL translator are documented in [docs/isl-realtime-translation-plan.md](docs/isl-realtime-translation-plan.md). This is a plan, not an implemented model: the current camera remains a preview until a real streaming model is integrated and evaluated with fluent Deaf signers.
 
+## ISL recognition service status
+
+A separate FastAPI scaffold is in `services/isl-stream/`. It intentionally reports `model_not_configured` and does not generate translations. It is not deployed or connected to the app. See its [service README](services/isl-stream/README.md) and the [real-time ISL engineering plan](docs/isl-realtime-translation-plan.md).
+
 ## Run locally
 Run npm install, then npm run dev.
 
