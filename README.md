@@ -9,7 +9,9 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 - ISL, ASL and BSL language selector
 - Camera preview for the sign-to-text workflow
 - Browser speech-recognition captions where supported
-- Text-to-speech and quick emergency phrases
+- Text-to-speech and expanded quick-help phrases
+- Conversation Board with editable messages, large-text display, copy and speech controls
+- Explicit confirmation prompts to reduce misunderstandings in important exchanges
 - Starter learning path with locally saved progress
 - PWA manifest and service-worker shell cache
 
@@ -17,7 +19,7 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 Run npm install, then npm run dev.
 
 ## Important capability note
-The camera page is currently a preview, NOT a sign-language translator. Reliable sign-language translation needs a validated model trained on appropriately licensed, representative video data, including hand shape, movement, body position, facial expression and sign-language grammar. It must be evaluated with fluent signers and Deaf community partners. Do not use this prototype for critical communication or emergency decisions.
+The camera page is currently a preview, NOT a sign-language translator. Reliable sign-language translation needs a validated model trained on appropriately licensed, representative video data, including hand shape, movement, body position, facial expression and sign-language grammar. It must be evaluated with fluent signers and Deaf community partners. Do not use this prototype for critical communication or emergency decisions. The Conversation Board shares only the message selected or typed by the user; it does not verify that another person understood it. Confirm important details directly, especially names, numbers, dates, medication and directions.
 
 Live captions rely on browser speech recognition and may not be available in every browser or locale. Speech recognition may use a browser/vendor service; review that provider's privacy terms.
 
