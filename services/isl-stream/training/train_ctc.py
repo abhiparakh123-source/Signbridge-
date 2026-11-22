@@ -74,9 +74,15 @@ class LandmarkDataset(Dataset):
         values = np.load(row["_path"], allow_pickle=False)
         if values.ndim != 2 or values.shape[0] < 1 or not np.isfinite(values).all():
             raise ValueError(f"invalid feature array for clip {row['clip_id']}")
-        tokens = [self.vocabulary[token] for token in row["_gloss"].split()]
-        if not tokens:
+        gloss_tokens = row["_gloss"].split()
+        if not gloss_tokens:
             raise ValueError(f"empty token sequence for clip {row['clip_id']}")
+        unknown = set(gloss_tokens) - self.vocabulary.keys()
+        if unknown:
+            raise ValueError(f"clip {row['clip_id']} contains gloss tokens absent from training vocabulary: {sorted(unknown)}")
+        if len(gloss_tokens) > values.shape[0]:
+            raise ValueError(f"clip {row['clip_id']} has fewer frames than target gloss tokens; CTC alignment is impossible")
+        tokens = [self.vocabulary[token] for token in gloss_tokens]
         return torch.from_numpy(values.astype(np.float32)), torch.tensor(tokens, dtype=torch.long)
 
 
