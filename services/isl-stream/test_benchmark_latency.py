@@ -22,7 +22,7 @@ class BenchmarkLatencyCliTests(unittest.TestCase):
                     "translated_at_ms": 70,
                     "captured_frames": 20,
                     "dropped_frames": 2,
-                }) + "\\n",
+                }) + "\n",
                 encoding="utf-8",
             )
             result = subprocess.run(
@@ -38,7 +38,7 @@ class BenchmarkLatencyCliTests(unittest.TestCase):
     def test_malformed_jsonl_returns_actionable_error(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "broken.jsonl"
-            source.write_text('{"captured_at_ms": 1}\\nnot-json\\n', encoding="utf-8")
+            source.write_text('{"captured_at_ms": 1}\nnot-json\n', encoding="utf-8")
             result = subprocess.run(
                 [sys.executable, str(SCRIPT), str(source)],
                 capture_output=True, text=True, check=False,
