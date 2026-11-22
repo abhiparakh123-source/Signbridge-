@@ -48,6 +48,11 @@ class AslCorpusManifestTests(unittest.TestCase):
     def test_empty_manifest_is_rejected(self):
         self.assertTrue(validate_rows([]))
 
+    def test_valid_rows_after_invalid_rows_are_counted(self):
+        errors = validate_rows([row(permission_status="pending"), row(source_clip_id="valid-after-invalid")])
+        self.assertTrue(any("permission_status" in error for error in errors))
+        self.assertFalse(any("No usable rows" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()
