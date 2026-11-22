@@ -72,7 +72,7 @@ def validate_hypothesis(
     if not isinstance(language, str) or language not in SUPPORTED_LANGUAGES:
         raise ProtocolError("sign_language must be ISL, ASL, or BSL")
     state = message.get("state")
-    if state not in {"provisional", "stable", "uncertain"}:
+    if not isinstance(state, str) or state not in {"provisional", "stable", "uncertain"}:
         raise ProtocolError("state must be provisional, stable, or uncertain")
     text = message.get("text")
     if not isinstance(text, str) or not text.strip():
