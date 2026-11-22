@@ -11,6 +11,7 @@ import torch
 from model import LandmarkCTCModel
 from checkpoint_validation import validate_checkpoint_metadata
 from ctc_decode import decode_frame_ids_incremental
+from chunking import iter_bounded_windows
 
 
 def load_model(checkpoint_path: Path, device: torch.device):
@@ -72,6 +73,55 @@ def iter_causal_predictions(chunks, model, device: torch.device, vocabulary):
             new_ids, vocabulary, previous_frame_id
         )
         processed_frames = int(output_lengths[0])
+        yield emitted
+
+
+
+def iter_bounded_causal_predictions(
+    chunks,
+    model,
+    device: torch.device,
+    vocabulary,
+    *,
+    max_frames: int,
+    overlap_frames: int = 0,
+):
+    """Yield newly decoded gloss tokens from bounded causal windows.
+
+    Overlap frames provide context but are not decoded twice. CTC repeat state
+    is preserved across emitted regions. Each window is evaluated independently:
+    this bounds per-call memory, but is not cached streaming inference and
+    window-local positional encodings can still affect boundary predictions.
+    """
+    if not getattr(model, "causal", False):
+        raise ValueError("bounded incremental inference requires a causal checkpoint")
+
+    previous_frame_id = None
+    emitted_until = 0
+    for start, end, window in iter_bounded_windows(
+        chunks, max_frames=max_frames, overlap_frames=overlap_frames
+    ):
+        tensor = torch.from_numpy(window).unsqueeze(0).to(device)
+        lengths = torch.tensor([len(window)], dtype=torch.long, device=device)
+        with torch.no_grad():
+            log_probs, output_lengths = model(tensor, lengths)
+            valid_length = int(output_lengths[0])
+            if valid_length < 1 or valid_length > len(window):
+                raise ValueError("model returned an invalid output length")
+            first_new = max(0, emitted_until - start)
+            if first_new >= valid_length:
+                emitted_until = max(emitted_until, end)
+                continue
+            new_ids = (
+                log_probs[first_new:valid_length, 0]
+                .argmax(dim=-1)
+                .cpu()
+                .tolist()
+            )
+        emitted, previous_frame_id = decode_frame_ids_incremental(
+            new_ids, vocabulary, previous_frame_id
+        )
+        emitted_until = max(emitted_until, start + valid_length)
         yield emitted
 
 
