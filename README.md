@@ -54,6 +54,7 @@ The hosted build is checked by Render's production build step (Vite). This confi
 | Text-to-speech | Uses the device/browser speech engine | Voice and pronunciation depend on installed voices and device settings |
 | Quick Help | Copies or speaks fixed messages | User must verify the selected message before showing or sending |
 | Conversation Board | Selects or edits text, shows large text, copies and speaks it | It cannot confirm that another person understood the message |
+| Call Assist | Opens the native phone dialler, prepares a message and previews device speech | No cellular call audio access, live transcription, translation or two-way audio bridge; provider integration is not connected |
 | Learning progress | Stores completed starter cards in local browser storage | Device-local only; clearing browser data or changing devices may erase progress |
 | Animated design | CSS motion and hover/focus effects | Respects the operating system's reduced-motion preference |
 
@@ -95,3 +96,7 @@ Do not market Call Assist as fully automatic or perfectly accurate until it pass
 Fast signing is normal fluent signing, not an edge case. The camera preview includes a fast capture request (up to 60 fps where supported), a standard 30 fps option, a lower-bandwidth fallback, and a device-reported capture setting. These controls only affect camera capture. They do not translate signs.
 
 Before any sign-recognition release, benchmark a continuous temporal model with real fluent signers at natural and fast speeds. Measure end-to-end latency (capture to stable text), dropped frames, missed short signs, false insertions, word/sign error rates and correction rate. Evaluate complete phrases and conversation turns, including facial grammar and body movement, not only isolated hand shapes. Never publish a speed or accuracy claim without test results from the target Android devices and Deaf community reviewers.
+
+## Phone integration status
+
+Call Assist currently opens the phone's native dialler and prepares a message. It does **not** listen to or translate a live phone call. Android restricts cellular call audio capture for ordinary apps. A true two-way interpreter needs an app-routed PSTN provider with bidirectional audio streaming, plus configured speech recognition, translation and speech synthesis services. No provider account or credentials are configured. See [the phone integration architecture and prerequisites](docs/phone-integration-architecture.md).
