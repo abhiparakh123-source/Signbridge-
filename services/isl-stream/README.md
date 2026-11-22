@@ -45,7 +45,7 @@ This is deliberately not wired to the WebSocket yet: without a real inference mo
 
 ## Experimental landmark CTC training baseline
 
-The `training/` folder contains a small PyTorch Transformer + CTC baseline. It consumes pre-extracted, signer-reviewed `.npy` feature sequences, not raw video. The sample rows in `feature-manifest.template.csv` are placeholders, not real training examples. Each run is restricted to exactly one sign language (ISL, ASL or BSL), requires explicit consent, checks signer-disjoint train/validation/test splits, and saves the best validation-loss checkpoint plus test loss.
+The `training/` folder contains a small PyTorch Transformer + CTC baseline. It consumes pre-extracted, signer-reviewed `.npy` feature sequences, not raw video. The sample rows in `feature-manifest.template.csv` are placeholders, not real training examples. Each run selects exactly one sign language (ISL, ASL or BSL) from the combined feature manifest and ignores the other valid language rows. It requires explicit consent, checks signer-disjoint train/validation/test splits for the selected language, and saves the best validation-loss checkpoint plus test metrics.
 
 Install optional training dependencies:
 
@@ -75,7 +75,7 @@ From a private family dataset folder containing `manifest.csv` and `clips/`, run
 python /path/to/Signbridge/services/isl-stream/training/extract_landmarks.py --manifest manifest.csv --data-root . --output-manifest features_manifest.csv --max-fps 60
 ```
 
-This uses MediaPipe Holistic to extract a fixed 1,699-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It samples up to the requested frame rate, preserves temporal order, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
+This uses MediaPipe Holistic to extract a fixed 1,699-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It uses a ceiling-based frame stride so the selected sample rate does not intentionally exceed the requested maximum, preserves temporal order, rejects duplicate IDs and sanitized filename collisions, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
 
 Then train one language at a time:
 
