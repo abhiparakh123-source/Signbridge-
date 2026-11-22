@@ -40,3 +40,25 @@
 ## Release rule
 
 The ASL pilot is a research track until a real checkpoint is trained, independently evaluated with fluent Deaf ASL signers and integrated into the camera pipeline. The live service must continue to report recognition unavailable until those gates pass. ASL output must never be presented as ISL interpretation.
+
+
+## ASL continuous-corpus metadata gate (implemented)
+
+A metadata-only validator is now available at
+`services/isl-stream/training/asl_corpus_manifest.py`. It accepts a CSV with
+these columns:
+
+`source_dataset, source_clip_id, signer_id, split, start_ms, end_ms, transcript, transcript_kind, modality, license_id, permission_status, attribution, source_url`.
+
+Example command:
+
+```bash
+python services/isl-stream/training/asl_corpus_manifest.py path/to/asl_continuous_manifest.csv
+```
+
+- Allowed split names are train, validation and test; a signer may occur in only one split.
+- Clip IDs must be unique within a source dataset and segment timestamps must be valid.
+- Every row must record a license, attribution, source URL and explicit `permission_status=approved`.
+- `transcript_kind` must explicitly be `translation` or `gloss`. How2Sign English transcripts are translation targets, not ASL gloss labels.
+- This tool validates metadata only. It does not download media, verify legal rights, decode video, validate signing labels or train a model.
+- It deliberately does not convert the English translation transcript into the existing gloss-CTC training format.
