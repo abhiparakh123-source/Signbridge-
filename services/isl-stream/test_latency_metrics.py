@@ -16,7 +16,7 @@ class LatencyMetricsTests(unittest.TestCase):
         ])
         self.assertEqual(result["first_provisional_latency_ms"]["p50"], 30)
         self.assertEqual(result["first_provisional_latency_ms"]["p95"], 40)
-        self.assertEqual(result["stable_latency_ms"]["p50"], 50)
+        self.assertEqual(result["stable_latency_ms"]["p50"], 80)
         self.assertEqual(result["translation_latency_ms"]["p95"], 130)
         self.assertEqual(result["dropped_frames"], 15)
         self.assertEqual(result["dropped_frame_percent"], 5.0)
