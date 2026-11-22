@@ -12,8 +12,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import cv2
-import mediapipe as mp
 import numpy as np
 
 POSE_COUNT = 33
@@ -63,6 +61,11 @@ def pack_landmarks(results) -> np.ndarray:
 
 
 def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
+    # Heavy video dependencies are imported only for actual extraction so the
+    # feature-vector unit tests can run with NumPy alone.
+    import cv2
+    import mediapipe as mp
+
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
         raise ValueError(f"cannot open video: {video_path}")
