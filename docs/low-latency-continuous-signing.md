@@ -77,3 +77,8 @@ translation, plus dropped-frame percentage. Timestamps must come from the same
 monotonic clock for each phrase. The reporter only summarises measurements;
 it does not create model output or imply that live recognition is active.
 Do not commit recordings, personal data or private benchmark files to GitHub.
+
+
+## Prefix-emission experiment
+
+`training/inference.py` includes `iter_causal_predictions`, which accepts successive landmark chunks and yields newly decoded gloss tokens. Because causal attention prevents future frames from changing earlier frame outputs, it can emit a prefix hypothesis as new chunks arrive. The implementation deliberately recomputes the entire accumulated prefix on each chunk and keeps that prefix in memory. Its compute cost grows with sequence length; it is a correctness-oriented experiment, not an efficient streaming runtime. CTC repeat state is carried across chunk boundaries so a token spanning two chunks is not duplicated. The live service remains disabled until a trained, evaluated model and efficient runtime exist.
