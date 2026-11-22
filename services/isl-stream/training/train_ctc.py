@@ -201,6 +201,10 @@ def main():
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--causal", action="store_true",
+        help="train with causal attention (still full-window inference, not a streaming runtime)",
+    )
     args = parser.parse_args()
     if args.epochs < 1 or args.batch_size < 1:
         parser.error("--epochs and --batch-size must be positive")
@@ -245,7 +249,7 @@ def main():
         raise ValueError("no feature arrays found")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LandmarkCTCModel(feature_dim, len(vocabulary)).to(device)
+    model = LandmarkCTCModel(feature_dim, len(vocabulary), causal=args.causal).to(device)
     loss_fn = torch.nn.CTCLoss(blank=0, zero_infinity=True)
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
     train_loader = DataLoader(LandmarkDataset(train_rows, vocabulary), batch_size=args.batch_size, shuffle=True, collate_fn=collate)
@@ -270,7 +274,7 @@ def main():
                 "vocabulary": vocabulary,
                 "sign_language": args.language,
                 "model_type": "landmark_ctc_transformer_baseline",
-                "architecture": {"width": 256, "heads": 4, "layers": 4, "dropout": 0.1},
+                "architecture": {"width": 256, "heads": 4, "layers": 4, "dropout": 0.1, "causal": args.causal},
                 "seed": args.seed,
             }, args.output)
     checkpoint = torch.load(args.output, map_location=device, weights_only=False)
