@@ -31,3 +31,39 @@ Live captions rely on browser speech recognition and may not be available in eve
 5. Add automated tests, privacy review and Android/PWA device testing.
 
 No secrets are required for this frontend starter. Never put a Supabase service-role key in browser code.
+
+## Reliability and verification status
+
+The hosted build is checked by Render's production build step (Vite). This confirms that the source compiles and the static bundle is generated; it does not prove camera, microphone, clipboard, speech output or every mobile browser behaves identically. Those require device/browser permission tests.
+
+### Current feature boundaries
+
+| Feature | What it does now | Important limitation |
+|---|---|---|
+| Sign language selector | Selects ISL, ASL or BSL in the interface | Does not change or enable a recognition model |
+| Sign-to-text | Opens a local camera preview | No sign recognition or translation model is connected |
+| Live captions | Uses browser speech recognition for spoken English (India) | Browser, network, microphone permission and locale affect availability and accuracy |
+| Text-to-speech | Uses the device/browser speech engine | Voice and pronunciation depend on installed voices and device settings |
+| Quick Help | Copies or speaks fixed messages | User must verify the selected message before showing or sending |
+| Conversation Board | Selects or edits text, shows large text, copies and speaks it | It cannot confirm that another person understood the message |
+| Learning progress | Stores completed starter cards in local browser storage | Device-local only; clearing browser data or changing devices may erase progress |
+| Animated design | CSS motion and hover/focus effects | Respects the operating system's reduced-motion preference |
+
+### Communication safety
+
+Do not rely on SIGNBRIDGE as the sole communication method for emergencies, medical decisions, consent, legal matters, navigation or other high-stakes exchanges. Repeat and confirm critical information, especially names, numbers, dates, medication, addresses and directions. Sign-language translation must not be presented as accurate until a validated model is tested with fluent signers and Deaf community reviewers.
+
+### Manual device test checklist
+
+- Open on Android Chrome and desktop Chrome.
+- Navigate through every menu item and use browser back/refresh.
+- Grant and deny camera permission; verify preview starts and camera indicator stops when leaving the page.
+- Grant and deny microphone permission; verify captions start, stop, report errors and clear correctly.
+- Test copy with clipboard permission available and unavailable.
+- Test speech output with device volume on and off.
+- Select every Quick Help message and Conversation Board option; test custom text and large-text mode.
+- Complete and uncomplete lessons; refresh and verify local progress.
+- Enable reduced-motion in the operating system and verify animations stop.
+- Test offline/reload behaviour and PWA installation separately.
+
+Automated production build success is not a substitute for this manual test matrix. Do not mark a feature fully verified until it has passed on the target device/browser.
