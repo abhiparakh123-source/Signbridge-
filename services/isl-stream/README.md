@@ -125,3 +125,10 @@ This is a more bounded experiment than full-prefix recomputation, but it is stil
 ## Dataset duplicate-clip safeguards
 
 `dataset_tools.py` now rejects empty video files, repeated paths and byte-identical clips even when they are stored under different filenames. Content fingerprints are computed incrementally in 1 MiB blocks; raw video bytes are not loaded into memory or uploaded. This helps prevent accidental train/test leakage from duplicated recordings. It does not verify that gloss labels are correct, that consent is legally sufficient, or that the dataset represents the wider ISL community.
+
+
+## ASL-first pilot priority
+
+The immediate research priority is now the ASL pilot documented in `docs/asl-first-pilot.md`, while keeping ISL and BSL as separate language tracks. How2Sign is the leading continuous-ASL candidate, subject to its research-only CC BY-NC 4.0 terms and access requirements. Its English transcripts must not be mislabeled as ASL gloss. ASLLRP/NCSLGR is a complementary linguistically annotated continuous corpus with research/education access restrictions. WLASL, MS-ASL and ASL Citizen are isolated-sign resources only.
+
+No ASL or ISL checkpoint is currently installed. This priority change does not make ASL recognition available and does not make ASL interchangeable with ISL. The API continues to fail closed until a real language-specific model has been trained, evaluated and integrated.
