@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install lightweight feature-test dependency
+        run: python -m pip install "numpy>=1.26,<2.0"
       - name: Compile ISL service scaffold
         run: python -m compileall -q services/isl-stream
       - name: Validate family dataset and streaming protocol
