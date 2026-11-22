@@ -222,6 +222,7 @@ def main():
                 "vocabulary": vocabulary,
                 "sign_language": args.language,
                 "model_type": "landmark_ctc_transformer_baseline",
+                "architecture": {"width": 256, "heads": 4, "layers": 4, "dropout": 0.1},
                 "seed": args.seed,
             }, args.output)
     checkpoint = torch.load(args.output, map_location=device, weights_only=False)
