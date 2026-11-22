@@ -8,7 +8,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import random
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -166,7 +168,11 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
             features, lengths = features.to(device), lengths.to(device)
             targets, target_lengths = targets.to(device), target_lengths.to(device)
             log_probs, output_lengths = model(features, lengths)
+            if not torch.isfinite(log_probs).all():
+                raise ValueError("non-finite model output during evaluation; check the checkpoint and features")
             loss = loss_fn(log_probs, targets, output_lengths, target_lengths)
+            if not torch.isfinite(loss):
+                raise ValueError("non-finite CTC evaluation loss; check features and gloss alignments")
             total_loss += float(loss) * features.shape[0]
             count += features.shape[0]
             predictions = log_probs.argmax(dim=-1).transpose(0, 1)
@@ -184,8 +190,10 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
                 ref_text, hyp_text = " ".join(reference), " ".join(hypothesis)
                 char_errors += edit_distance(list(ref_text), list(hyp_text))
                 char_total += len(ref_text)
+    if count == 0:
+        raise ValueError("evaluation loader is empty")
     return {
-        "ctc_loss": total_loss / max(count, 1),
+        "ctc_loss": total_loss / count,
         "gloss_wer": word_errors / max(word_total, 1),
         "gloss_cer": char_errors / max(char_total, 1),
         "clips": count,
@@ -268,7 +276,7 @@ def main():
         if val_loss < best:
             best = val_loss
             args.output.parent.mkdir(parents=True, exist_ok=True)
-            torch.save({
+            checkpoint = {
                 "state_dict": model.state_dict(),
                 "feature_dim": feature_dim,
                 "vocabulary": vocabulary,
@@ -276,7 +284,19 @@ def main():
                 "model_type": "landmark_ctc_transformer_baseline",
                 "architecture": {"width": 256, "heads": 4, "layers": 4, "dropout": 0.1, "causal": args.causal},
                 "seed": args.seed,
-            }, args.output)
+            }
+            # Write beside the destination, then atomically replace it. An
+            # interrupted epoch must not leave a truncated "best" checkpoint.
+            descriptor, temporary_name = tempfile.mkstemp(
+                prefix=args.output.name + ".", suffix=".tmp", dir=args.output.parent
+            )
+            os.close(descriptor)
+            try:
+                torch.save(checkpoint, temporary_name)
+                os.replace(temporary_name, args.output)
+            finally:
+                if os.path.exists(temporary_name):
+                    os.unlink(temporary_name)
     checkpoint = torch.load(args.output, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     test_metrics = evaluate(model, test_loader, loss_fn, device, reverse_vocabulary)
