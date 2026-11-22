@@ -15,6 +15,10 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 - Starter learning path with locally saved progress
 - PWA manifest and service-worker shell cache
 
+## ASL-first research pilot
+
+The immediate model-development priority is now ASL, using rights-cleared continuous-signing research data where permitted. See the [ASL-first pilot plan](docs/asl-first-pilot.md). ISL remains a separate target; ASL and ISL are different languages, and an ASL model cannot interpret someone signing ISL. No ASL model is currently trained or connected.
+
 ## Real-time ISL translation plan
 
 The engineering research, candidate datasets, architecture, licensing checks and release gates for a real continuous ISL translator are documented in [docs/isl-realtime-translation-plan.md](docs/isl-realtime-translation-plan.md). This is a plan, not an implemented model: the current camera remains a preview until a real streaming model is integrated and evaluated with fluent Deaf signers.
