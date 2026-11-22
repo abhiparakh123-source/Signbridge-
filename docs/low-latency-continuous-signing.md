@@ -53,3 +53,27 @@ A sensible engineering objective is to keep the live pipeline bounded and respon
 ## Current status
 
 Architecture and test safeguards only. There is no trained continuous-sign model, no calibrated confidence, no production streaming inference, and no live sign-to-speech translation. The honest fallback remains text entry or a qualified human interpreter.
+
+
+## Running the benchmark report
+
+The dependency-free reporter accepts one JSON object per line, with monotonic
+millisecond timestamps for each phrase. Example:
+
+```json
+{"captured_at_ms":1000,"first_provisional_at_ms":1080,"stable_at_ms":1250,"translated_at_ms":1320,"captured_frames":90,"dropped_frames":2}
+{"captured_at_ms":2000,"first_provisional_at_ms":2070,"stable_at_ms":2210,"translated_at_ms":2290,"captured_frames":92,"dropped_frames":1}
+```
+
+Save records to a private local file (for example, `benchmark.jsonl`) and run:
+
+```bash
+cd services/isl-stream
+python benchmark_latency.py /path/to/benchmark.jsonl
+```
+
+The report gives p50/p95 latency for first provisional text, stable text and
+translation, plus dropped-frame percentage. Timestamps must come from the same
+monotonic clock for each phrase. The reporter only summarises measurements;
+it does not create model output or imply that live recognition is active.
+Do not commit recordings, personal data or private benchmark files to GitHub.
