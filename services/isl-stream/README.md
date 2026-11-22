@@ -77,6 +77,8 @@ python /path/to/Signbridge/services/isl-stream/training/extract_landmarks.py --m
 
 This uses MediaPipe Holistic to extract a fixed 1,699-value vector per sampled frame: pose, face, left/right hand landmarks and presence flags. It uses a ceiling-based frame stride so the selected sample rate does not intentionally exceed the requested maximum, preserves temporal order, rejects duplicate IDs and sanitized filename collisions, and writes NumPy arrays under `features/`. It does not recognise signs. Review every source clip and gloss label; the source manifest's `label` field must contain expert-reviewed gloss token(s), not a translated sentence. Keep the generated feature arrays and manifest private.
 
+For a causal-attention research comparison, add `--causal` to the training command. This masks future frames during attention, but inference still processes a complete supplied sequence; it is **not** cached incremental streaming and must not be described as live translation. The checkpoint records the causal setting and inference restores it automatically.
+
 Then train one language at a time:
 
 ```bash
