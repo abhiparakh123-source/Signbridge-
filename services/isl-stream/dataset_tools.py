@@ -21,6 +21,8 @@ def validate(manifest: Path, root: Path) -> list[str]:
     seen_ids: set[str] = set()
     signer_splits: dict[str, set[str]] = {}
     label_counts: dict[str, int] = {}
+    seen_paths: dict[Path, int] = {}
+    seen_content: dict[str, int] = {}
     try:
         handle = manifest.open(newline="", encoding="utf-8")
     except OSError as exc:
@@ -65,6 +67,28 @@ def validate(manifest: Path, root: Path) -> list[str]:
                 else:
                     if not candidate.is_file():
                         errors.append(prefix + f"video file not found: {video_path}")
+                    else:
+                        if candidate.stat().st_size == 0:
+                            errors.append(prefix + f"video file is empty: {video_path}")
+                        if candidate in seen_paths:
+                            errors.append(
+                                prefix + f"video file is reused from line {seen_paths[candidate]}; "
+                                "each manifest row must reference a distinct clip"
+                            )
+                        else:
+                            seen_paths[candidate] = line
+                        try:
+                            digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                        except OSError as exc:
+                            errors.append(prefix + f"cannot read video file: {exc}")
+                        else:
+                            if digest in seen_content:
+                                errors.append(
+                                    prefix + f"video content duplicates line {seen_content[digest]}; "
+                                    "duplicate clips can leak across dataset splits"
+                                )
+                            else:
+                                seen_content[digest] = line
             if signer and split in SPLITS:
                 signer_splits.setdefault(signer, set()).add(split)
             if label:
