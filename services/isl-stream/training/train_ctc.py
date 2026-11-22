@@ -80,8 +80,11 @@ class LandmarkDataset(Dataset):
         unknown = set(gloss_tokens) - self.vocabulary.keys()
         if unknown:
             raise ValueError(f"clip {row['clip_id']} contains gloss tokens absent from training vocabulary: {sorted(unknown)}")
-        if len(gloss_tokens) > values.shape[0]:
-            raise ValueError(f"clip {row['clip_id']} has fewer frames than target gloss tokens; CTC alignment is impossible")
+        minimum_frames = len(gloss_tokens) + sum(
+            left == right for left, right in zip(gloss_tokens, gloss_tokens[1:])
+        )
+        if minimum_frames > values.shape[0]:
+            raise ValueError(f"clip {row['clip_id']} has too few frames for a valid CTC alignment")
         tokens = [self.vocabulary[token] for token in gloss_tokens]
         return torch.from_numpy(values.astype(np.float32)), torch.tensor(tokens, dtype=torch.long)
 
@@ -94,26 +97,65 @@ def collate(batch):
     return features, lengths, torch.cat(targets), target_lengths
 
 
-def run_epoch(model, loader, loss_fn, optimizer, device):
-    training = optimizer is not None
-    model.train(training)
-    total = 0.0
+def edit_distance(reference, hypothesis):
+    previous = list(range(len(hypothesis) + 1))
+    for row, ref_token in enumerate(reference, start=1):
+        current = [row]
+        for column, hyp_token in enumerate(hypothesis, start=1):
+            current.append(min(
+                current[-1] + 1,
+                previous[column] + 1,
+                previous[column - 1] + (ref_token != hyp_token),
+            ))
+        previous = current
+    return previous[-1]
+
+
+def greedy_ctc_decode(frame_ids, blank_id=0):
+    decoded = []
+    previous = None
+    for token in frame_ids:
+        token = int(token)
+        if token != previous and token != blank_id:
+            decoded.append(token)
+        previous = token
+    return decoded
+
+
+def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
+    model.eval()
+    total_loss = 0.0
     count = 0
-    for features, lengths, targets, target_lengths in loader:
-        features, lengths = features.to(device), lengths.to(device)
-        targets, target_lengths = targets.to(device), target_lengths.to(device)
-        if training:
-            optimizer.zero_grad(set_to_none=True)
-        with torch.set_grad_enabled(training):
+    word_errors = word_total = char_errors = char_total = 0
+    with torch.no_grad():
+        for features, lengths, targets, target_lengths in loader:
+            features, lengths = features.to(device), lengths.to(device)
+            targets, target_lengths = targets.to(device), target_lengths.to(device)
             log_probs, output_lengths = model(features, lengths)
             loss = loss_fn(log_probs, targets, output_lengths, target_lengths)
-            if training:
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                optimizer.step()
-        total += float(loss.detach()) * features.shape[0]
-        count += features.shape[0]
-    return total / max(count, 1)
+            total_loss += float(loss) * features.shape[0]
+            count += features.shape[0]
+            predictions = log_probs.argmax(dim=-1).transpose(0, 1)
+            offset = 0
+            for index, target_length in enumerate(target_lengths.tolist()):
+                reference_ids = targets[offset:offset + target_length].tolist()
+                offset += target_length
+                predicted_ids = greedy_ctc_decode(
+                    predictions[index, :int(output_lengths[index])].tolist()
+                )
+                reference = [reverse_vocabulary[token] for token in reference_ids]
+                hypothesis = [reverse_vocabulary[token] for token in predicted_ids]
+                word_errors += edit_distance(reference, hypothesis)
+                word_total += len(reference)
+                ref_text, hyp_text = " ".join(reference), " ".join(hypothesis)
+                char_errors += edit_distance(list(ref_text), list(hyp_text))
+                char_total += len(ref_text)
+    return {
+        "ctc_loss": total_loss / max(count, 1),
+        "gloss_wer": word_errors / max(word_total, 1),
+        "gloss_cer": char_errors / max(char_total, 1),
+        "clips": count,
+    }
 
 
 def main():
@@ -166,8 +208,10 @@ def main():
     history = []
     for epoch in range(1, args.epochs + 1):
         train_loss = run_epoch(model, train_loader, loss_fn, optimizer, device)
-        val_loss = run_epoch(model, val_loader, loss_fn, None, device)
-        history.append({"epoch": epoch, "train_ctc_loss": train_loss, "validation_ctc_loss": val_loss})
+        reverse_vocabulary = {index: token for token, index in vocabulary.items()}
+        validation_metrics = evaluate(model, val_loader, loss_fn, device, reverse_vocabulary)
+        val_loss = validation_metrics["ctc_loss"]
+        history.append({"epoch": epoch, "train_ctc_loss": train_loss, "validation": validation_metrics})
         print(json.dumps(history[-1]))
         if val_loss < best:
             best = val_loss
@@ -182,10 +226,16 @@ def main():
             }, args.output)
     checkpoint = torch.load(args.output, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
-    test_loss = run_epoch(model, test_loader, loss_fn, None, device)
-    report = {"language": args.language, "device": str(device), "test_ctc_loss": test_loss, "history": history}
+    test_metrics = evaluate(model, test_loader, loss_fn, device, reverse_vocabulary)
+    report = {
+        "language": args.language,
+        "device": str(device),
+        "test_metrics": test_metrics,
+        "history": history,
+        "warning": "Gloss WER/CER measure this experimental gloss baseline only, not sentence translation quality or real-world sign comprehension.",
+    }
     args.output.with_suffix(".metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps({"test_ctc_loss": test_loss, "checkpoint": str(args.output)}))
+    print(json.dumps({"test_metrics": test_metrics, "checkpoint": str(args.output)}))
 
 
 if __name__ == "__main__":
