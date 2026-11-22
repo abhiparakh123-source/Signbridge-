@@ -62,3 +62,23 @@ python services/isl-stream/training/asl_corpus_manifest.py path/to/asl_continuou
 - `transcript_kind` must explicitly be `translation` or `gloss`. How2Sign English transcripts are translation targets, not ASL gloss labels.
 - This tool validates metadata only. It does not download media, verify legal rights, decode video, validate signing labels or train a model.
 - It deliberately does not convert the English translation transcript into the existing gloss-CTC training format.
+
+
+## Training environment setup
+
+The optional research dependencies are isolated from the lightweight streaming API:
+install with `python -m pip install -r services/isl-stream/training-requirements.txt`
+in a Python 3.11 virtual environment. This installs PyTorch, NumPy, OpenCV
+headless and MediaPipe for local landmark extraction and baseline training.
+Choose the PyTorch build appropriate to the machine (CPU or supported CUDA)
+before large training runs if a platform-specific wheel is required.
+
+How2Sign's official page describes more than 80 hours of continuous ASL and
+lists precomputed B-F-H 2D keypoint clips alongside RGB video. RGB downloads
+are very large (the frontal training video alone is listed at 290 GB), so
+beginning with a permitted keypoint modality is a practical way to reduce
+storage and preprocessing. The official page also says the dataset is for
+research purposes, uses CC BY-NC 4.0, and warns that sentence clip alignment
+may not be perfect. Permission/terms must still be checked for the exact
+intended use before acquiring or processing files. See the
+[official How2Sign dataset page](https://how2sign.github.io/).
