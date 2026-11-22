@@ -64,6 +64,37 @@ class StreamProtocolTests(unittest.TestCase):
         })
         self.assertTrue(result["speak_allowed"])
 
+
+    def test_unhashable_language_and_mime_are_rejected_cleanly(self):
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(sign_language=[]))
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(mime_type=[]))
+
+    def test_non_finite_confidence_values_are_rejected(self):
+        for confidence in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(confidence=confidence), self.assertRaises(ProtocolError):
+                validate_hypothesis({
+                    "type": "hypothesis", "sign_language": "ISL",
+                    "state": "stable", "text": "hello", "confidence": confidence,
+                })
+
+    def test_invalid_speech_threshold_is_rejected(self):
+        message = {
+            "type": "hypothesis", "sign_language": "ISL",
+            "state": "stable", "text": "hello", "confidence": 0.99,
+        }
+        for threshold in (float("nan"), float("inf"), True, "0.9"):
+            with self.subTest(threshold=threshold), self.assertRaises(ProtocolError):
+                validate_hypothesis(message, min_speak_confidence=threshold)
+
+    def test_oversized_hypothesis_text_is_rejected(self):
+        with self.assertRaisesRegex(ProtocolError, "4096-character"):
+            validate_hypothesis({
+                "type": "hypothesis", "sign_language": "ISL",
+                "state": "stable", "text": "x" * 4097, "confidence": 0.99,
+            })
+
     def test_stable_low_confidence_text_is_not_spoken(self):
         result = validate_hypothesis({
             "type": "hypothesis", "sign_language": "ISL",
