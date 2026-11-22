@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from prepare_asl_training_manifest import convert_rows
+from training.prepare_asl_training_manifest import convert_rows
 
 
 def row(dataset="corpus", clip="clip-1", signer="s1", split="train", kind="gloss"):
