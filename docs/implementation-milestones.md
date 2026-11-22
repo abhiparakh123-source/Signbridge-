@@ -44,11 +44,11 @@ This checklist tracks what exists in the repository versus what still requires r
 - [ ] Build and evaluate a BSL model and vocabulary separately.
 - [ ] Add spoken Hindi/English captions with clear indication when browser speech recognition is unavailable or uncertain.
 - [ ] Implement true two-way live conversation mode with user-visible consent and transcript correction.
-- [ ] Choose and configure a PSTN telephony provider for app-routed calls; check India destination eligibility and charges.
+- [ ] Confirm Exotel individual/family account eligibility, KYC, ExoPhone access, AgentStream bidirectional streaming enablement and all charges; Exotel is the leading candidate, not yet selected or connected.\n- [ ] Configure a compliant PSTN provider for app-routed calls after eligibility and costs are confirmed.
 - [ ] Deploy an authenticated HTTPS/WSS phone gateway with provider webhook signature validation and secrets stored only server-side.
 - [ ] Integrate streaming Hindi/English speech recognition, reviewed translation and speech synthesis into bidirectional call media.
 - [ ] Add explicit consent, transcript correction, confirmation-before-speaking, end-call and no-audio-retention controls.
-- [ ] Validate two-way calls with consenting participants and real Android devices. The current Call Assist only opens the native dialler and previews text-to-speech; it is not connected.
+- [ ] Validate two-way calls with consenting participants on real Android and iPhone devices (including iPhone Safari/PWA permissions, audio, interruptions and reconnect). The current Call Assist only opens the native dialler and previews text-to-speech; it is not connected.
 
 ### D. Family validation
 
@@ -75,3 +75,4 @@ The first pilot should focus on ISL and a clearly bounded set of everyday family
 ## Phone integration engineering decision
 
 The existing SIM-call path is not a call-audio integration. Android reserves cellular call capture sources behind `CAPTURE_AUDIO_OUTPUT`, which is not available to ordinary third-party apps. A real integrated interpreter therefore needs an app-routed PSTN call through a telephony provider with bidirectional media streaming, or a separate-device caption fallback. See [phone integration architecture](phone-integration-architecture.md). No provider has been selected, no credentials are configured, and no live phone interpreter is enabled.
+\n\n## iPhone and cross-platform phone support\n\n- [x] Define a shared backend/provider architecture that does not depend on the caller's mobile operating system.\n- [x] Research India-first telephony candidates and document Exotel as the leading candidate pending account eligibility and cost confirmation.\n- [ ] Verify iPhone Safari/PWA camera and microphone permissions, audio playback, call-screen transitions, background limitations and reconnect behaviour on real devices.\n- [ ] Add native iOS packaging only if device testing shows the web/PWA client is insufficient.\n
