@@ -16,7 +16,7 @@ class StreamProtocolTests(unittest.TestCase):
             "sequence": 0,
             "timestamp_ms": 10,
             "mime_type": "image/jpeg",
-            "frame_b64": base64.b64encode(b"\\xff\\xd8\\xffsample").decode("ascii"),
+            "frame_b64": base64.b64encode(b"\xff\xd8\xffsample").decode("ascii"),
         }
         data.update(overrides)
         return data
@@ -49,8 +49,8 @@ class StreamProtocolTests(unittest.TestCase):
 
     def test_accepts_supported_image_signatures(self):
         samples = {
-            "image/jpeg": b"\\xff\\xd8\\xffjpeg",
-            "image/png": b"\\x89PNG\\r\\n\\x1a\\nrest",
+            "image/jpeg": b"\xff\xd8\xffjpeg",
+            "image/png": b"\x89PNG\r\n\x1a\nrest",
             "image/webp": b"RIFFxxxxWEBPdata",
         }
         for mime, raw in samples.items():
