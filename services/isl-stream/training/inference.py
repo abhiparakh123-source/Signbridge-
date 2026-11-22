@@ -22,6 +22,7 @@ def load_model(checkpoint_path: Path, device: torch.device):
         heads=int(architecture.get("heads", 4)),
         layers=int(architecture.get("layers", 4)),
         dropout=float(architecture.get("dropout", 0.1)),
+        causal=architecture.get("causal", False),
     ).to(device)
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
