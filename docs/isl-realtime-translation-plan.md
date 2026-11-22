@@ -96,3 +96,25 @@ A deliberately non-translating FastAPI scaffold now lives in `services/isl-strea
 ## Current status
 
 The existing SIGNBRIDGE web/PWA and Android shell do not contain a sign-language recognition model. The camera's 60 fps request only changes capture settings. This plan is not an implementation or a claim of translation capability.
+
+
+## Family-first personal-use priorities
+
+SIGNBRIDGE is being built for the user's parents and personal accessibility use, not as a commercial product. Prioritise their actual signing style, regional vocabulary, preferred output language (Hindi and/or English), and the devices they will use.
+
+### Practical path
+
+1. Start with a small, useful family vocabulary (greetings, needs, food, household objects, directions, appointments, family names and common questions), then expand based on real use.
+2. With each parent's informed consent, record example clips in their normal signing environment and preferred camera position. Keep recordings private and local by default; allow deletion and avoid uploading raw video unless explicitly chosen.
+3. Capture multiple examples per sign, including natural speed, transitions, both hands, facial expression and different lighting. A sign's meaning may depend on movement, context and non-manual features; do not reduce the task to hand-shape-only classification.
+4. Build a personalised recogniser as an initial assistive layer, not a claim of full ISL translation. Clearly label supported vocabulary and abstain when uncertain.
+5. Evaluate with the parents themselves: missed signs, incorrect substitutions, time-to-display, time-to-speech and whether the phrase was understood. Fix high-frequency failures first.
+6. Add continuous sentence recognition only after the personalised vocabulary baseline works. A word-level model is not automatically a sentence translator.
+
+### Personal dataset and consent
+
+Family-recorded clips can be useful for adapting the app to the actual users, but they are not a substitute for broad signer coverage. Obtain each person's informed consent, explain what is recorded and where it is stored, and provide a simple delete/export path. Keep the data on-device or in a private user-controlled location unless the family explicitly chooses otherwise.
+
+### Research baseline caveats
+
+The Sid-V5 repository describes an ST-GCN + Transformer + CTC pipeline and reports 30.77% WER on its stated continuous-recognition setup. Its README says MIT, but the repository tree currently has no separate LICENSE file; verify the actual license with the author before copying code. Its README also says local inference requires a GPU with at least 8 GB VRAM, so it is not yet a proven Android-ready runtime. Treat it as an architecture reference, not a drop-in model or a performance guarantee.
