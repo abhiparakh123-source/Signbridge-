@@ -44,7 +44,11 @@ This checklist tracks what exists in the repository versus what still requires r
 - [ ] Build and evaluate a BSL model and vocabulary separately.
 - [ ] Add spoken Hindi/English captions with clear indication when browser speech recognition is unavailable or uncertain.
 - [ ] Implement true two-way live conversation mode with user-visible consent and transcript correction.
-- [ ] Implement a phone-call audio bridge only after Android call/audio routing and consent/privacy constraints are verified; the current Call Assist is a preparation tool, not an automatic interpreter.
+- [ ] Choose and configure a PSTN telephony provider for app-routed calls; check India destination eligibility and charges.
+- [ ] Deploy an authenticated HTTPS/WSS phone gateway with provider webhook signature validation and secrets stored only server-side.
+- [ ] Integrate streaming Hindi/English speech recognition, reviewed translation and speech synthesis into bidirectional call media.
+- [ ] Add explicit consent, transcript correction, confirmation-before-speaking, end-call and no-audio-retention controls.
+- [ ] Validate two-way calls with consenting participants and real Android devices. The current Call Assist only opens the native dialler and previews text-to-speech; it is not connected.
 
 ### D. Family validation
 
@@ -67,3 +71,7 @@ A camera configured for 60 fps does not guarantee 60 fps inference or accurate t
 ## Exit criteria for the first useful family pilot
 
 The first pilot should focus on ISL and a clearly bounded set of everyday family conversations. It should produce incremental text at natural signing speed, visibly flag uncertainty, allow corrections, run reliably on the family's Android device, and be evaluated with signer-independent testing. ASL/BSL expansion follows as separate language work, not a relabeling of the ISL model.
+
+## Phone integration engineering decision
+
+The existing SIM-call path is not a call-audio integration. Android reserves cellular call capture sources behind `CAPTURE_AUDIO_OUTPUT`, which is not available to ordinary third-party apps. A real integrated interpreter therefore needs an app-routed PSTN call through a telephony provider with bidirectional media streaming, or a separate-device caption fallback. See [phone integration architecture](phone-integration-architecture.md). No provider has been selected, no credentials are configured, and no live phone interpreter is enabled.
