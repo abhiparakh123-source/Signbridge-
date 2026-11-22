@@ -41,12 +41,16 @@ class LandmarkCTCModel(nn.Module):
         heads: int = 4,
         layers: int = 4,
         dropout: float = 0.1,
+        causal: bool = False,
     ):
         super().__init__()
         if feature_dim < 1 or vocabulary_size < 2:
             raise ValueError("feature_dim and vocabulary_size must be positive")
         if width % heads:
             raise ValueError("width must be divisible by heads")
+        if not isinstance(causal, bool):
+            raise ValueError("causal must be a boolean")
+        self.causal = causal
         self.input_projection = nn.Linear(feature_dim, width)
         self.position = SinusoidalPositionEncoding(width)
         block = nn.TransformerEncoderLayer(
@@ -74,6 +78,14 @@ class LandmarkCTCModel(nn.Module):
         positions = torch.arange(features.shape[1], device=features.device)
         padding_mask = positions.unsqueeze(0) >= lengths.unsqueeze(1)
         hidden = self.position(self.input_projection(features))
-        hidden = self.encoder(hidden, src_key_padding_mask=padding_mask)
+        attention_mask = None
+        if self.causal:
+            attention_mask = torch.triu(
+                torch.ones(features.shape[1], features.shape[1], dtype=torch.bool, device=features.device),
+                diagonal=1,
+            )
+        hidden = self.encoder(
+            hidden, mask=attention_mask, src_key_padding_mask=padding_mask
+        )
         logits = self.classifier(self.norm(hidden)).log_softmax(dim=-1)
         return logits.transpose(0, 1), lengths
