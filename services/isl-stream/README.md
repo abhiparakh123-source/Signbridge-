@@ -31,3 +31,8 @@ A future streaming implementation must use authenticated, encrypted transport, e
 ## Release safety
 
 Never speak an uncertain hypothesis as a confirmed sentence. Critical details (names, phone numbers, amounts, dates, addresses, medication and emergency instructions) require user confirmation. The service is not a substitute for a qualified interpreter or emergency service.
+
+
+## Multiple sign languages
+
+The family manifest requires `sign_language` with one of `ISL`, `ASL`, or `BSL`. Labels and model training must remain language-specific; never pool identical-looking gloss labels across languages without expert-reviewed mapping. The recorder downloads local clips tagged with the selected language. No sign recognition model is configured yet.
