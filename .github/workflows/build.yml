@@ -19,8 +19,8 @@ jobs:
           python-version: '3.11'
       - name: Compile ISL service scaffold
         run: python -m compileall -q services/isl-stream
-      - name: Validate family dataset manifest tooling
+      - name: Validate family dataset and streaming protocol
         working-directory: services/isl-stream
-        run: python -m unittest -v test_dataset_tools.py
+        run: python -m unittest discover -v
       - run: npm run build
       - run: npm run test:smoke
