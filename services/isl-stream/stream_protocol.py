@@ -19,7 +19,7 @@ class ProtocolError(ValueError):
 
 
 def validate_frame_message(
-    message: dict[str, Any], *, last_timestamp_ms: int = -1
+    message: dict[str, Any], *, last_timestamp_ms: int = -1, last_sequence: int = -1
 ) -> dict[str, Any]:
     """Validate one timestamped frame envelope before any image decoding."""
     if not isinstance(message, dict) or message.get("type") != "frame":
@@ -33,6 +33,8 @@ def validate_frame_message(
         raise ProtocolError("sequence must be a non-negative integer")
     if isinstance(timestamp, bool) or not isinstance(timestamp, int) or timestamp < 0:
         raise ProtocolError("timestamp_ms must be a non-negative integer")
+    if sequence <= last_sequence:
+        raise ProtocolError("sequence must increase monotonically")
     if timestamp <= last_timestamp_ms:
         raise ProtocolError("timestamp_ms must increase monotonically")
     mime = message.get("mime_type")
