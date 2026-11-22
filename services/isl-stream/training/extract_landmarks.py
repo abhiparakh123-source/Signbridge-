@@ -39,7 +39,7 @@ def _landmark_values(container, count: int, width: int, fields: tuple[str, ...])
 
 
 def pack_landmarks(results) -> np.ndarray:
-    """Return 1,699 float32 features: pose, face, hands, then four presence flags."""
+    """Return 1,825 float32 features: pose, face, hands, then four presence flags."""
     pose, pose_present = _landmark_values(
         results.pose_landmarks, POSE_COUNT, POSE_WIDTH,
         ("x", "y", "z", "visibility", "presence"),
