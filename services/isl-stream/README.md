@@ -45,7 +45,7 @@ This is deliberately not wired to the WebSocket yet: without a real inference mo
 
 ## Experimental landmark CTC training baseline
 
-The `training/` folder contains a small PyTorch Transformer + CTC baseline. It consumes pre-extracted, signer-reviewed `.npy` feature sequences, not raw video. Each run is restricted to exactly one sign language (ISL, ASL or BSL), requires explicit consent, checks signer-disjoint train/validation/test splits, and saves the best validation-loss checkpoint plus test loss.
+The `training/` folder contains a small PyTorch Transformer + CTC baseline. It consumes pre-extracted, signer-reviewed `.npy` feature sequences, not raw video. The sample rows in `feature-manifest.template.csv` are placeholders, not real training examples. Each run is restricted to exactly one sign language (ISL, ASL or BSL), requires explicit consent, checks signer-disjoint train/validation/test splits, and saves the best validation-loss checkpoint plus test loss.
 
 Install optional training dependencies:
 
