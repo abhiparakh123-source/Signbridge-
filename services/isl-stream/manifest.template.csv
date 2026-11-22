@@ -1,4 +1,5 @@
 clip_id,signer_id,sign_language,label,video_path,consent,split
-example-001,parent-a,ISL,hello,clips/example-001.webm,yes,train
-example-002,parent-a,ISL,thank_you,clips/example-002.webm,yes,train
-example-003,parent-b,ISL,help,clips/example-003.webm,yes,validation
+example-001,parent-a,ISL,HELLO,clips/example-001.webm,yes,train
+example-002,parent-a,ISL,THANK_YOU,clips/example-002.webm,yes,train
+example-003,parent-b,ISL,HELP,clips/example-003.webm,yes,validation
+example-004,parent-c,ISL,WATER,clips/example-004.webm,yes,test
