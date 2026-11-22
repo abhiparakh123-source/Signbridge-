@@ -127,6 +127,35 @@ def greedy_ctc_decode(frame_ids, blank_id=0):
     return decoded
 
 
+
+def run_epoch(model, loader, loss_fn, optimizer, device):
+    """Run one training epoch and return clip-weighted mean CTC loss."""
+    model.train()
+    total_loss = 0.0
+    count = 0
+    for features, lengths, targets, target_lengths in loader:
+        features = features.to(device)
+        lengths = lengths.to(device)
+        targets = targets.to(device)
+        target_lengths = target_lengths.to(device)
+
+        optimizer.zero_grad(set_to_none=True)
+        log_probs, output_lengths = model(features, lengths)
+        loss = loss_fn(log_probs, targets, output_lengths, target_lengths)
+        if not torch.isfinite(loss):
+            raise ValueError("non-finite CTC training loss; check features and gloss alignments")
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        batch_size = int(features.shape[0])
+        total_loss += float(loss.detach()) * batch_size
+        count += batch_size
+    if count == 0:
+        raise ValueError("training loader is empty")
+    return total_loss / count
+
+
 def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
     model.eval()
     total_loss = 0.0
