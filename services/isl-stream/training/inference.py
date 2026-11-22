@@ -10,6 +10,7 @@ import torch
 
 from model import LandmarkCTCModel
 from checkpoint_validation import validate_checkpoint_metadata
+from ctc_decode import decode_frame_ids_incremental
 
 
 def load_model(checkpoint_path: Path, device: torch.device):
@@ -30,17 +31,50 @@ def load_model(checkpoint_path: Path, device: torch.device):
 
 
 def ctc_greedy_decode(ids, vocabulary):
-    reverse = {index: token for token, index in vocabulary.items()}
-    result = []
-    previous = None
-    for raw in ids:
-        token_id = int(raw)
-        if token_id != previous and token_id != 0:
-            if token_id not in reverse:
-                raise ValueError("model emitted a token absent from its vocabulary")
-            result.append(reverse[token_id])
-        previous = token_id
-    return result
+    tokens, _ = decode_frame_ids_incremental(ids, vocabulary)
+    return tokens
+
+
+def iter_causal_predictions(chunks, model, device: torch.device, vocabulary):
+    """Yield newly decoded gloss tokens as chunks arrive.
+
+    This research path recomputes the entire causal prefix for each chunk. It
+    demonstrates prefix-stable emissions, not efficient cached streaming.
+    """
+    if not getattr(model, "causal", False):
+        raise ValueError("incremental prefix emission requires a causal checkpoint")
+    accumulated = None
+    processed_frames = 0
+    previous_frame_id = None
+    feature_dim = None
+
+    for chunk in chunks:
+        values = np.asarray(chunk)
+        if values.ndim != 2 or not np.isfinite(values).all():
+            raise ValueError("each chunk must be a finite [frames,feature_dim] array")
+        if values.shape[0] == 0:
+            continue
+        if feature_dim is None:
+            feature_dim = values.shape[1]
+        if values.shape[1] != feature_dim:
+            raise ValueError("feature dimensions changed between chunks")
+        values = values.astype(np.float32, copy=False)
+        accumulated = values if accumulated is None else np.concatenate((accumulated, values), axis=0)
+        tensor = torch.from_numpy(accumulated).unsqueeze(0).to(device)
+        lengths = torch.tensor([len(accumulated)], dtype=torch.long, device=device)
+        with torch.no_grad():
+            log_probs, output_lengths = model(tensor, lengths)
+            new_ids = (
+                log_probs[processed_frames:int(output_lengths[0]), 0]
+                .argmax(dim=-1).cpu().tolist()
+            )
+        emitted, previous_frame_id = decode_frame_ids_incremental(
+            new_ids, vocabulary, previous_frame_id
+        )
+        processed_frames = int(output_lengths[0])
+        yield emitted
+
+
 
 
 def predict(features: np.ndarray, model, device: torch.device, vocabulary):
