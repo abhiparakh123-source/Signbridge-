@@ -7,7 +7,7 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 ## Included
 - Responsive dashboard and mobile navigation
 - ISL, ASL and BSL language selector
-- Camera preview for the sign-to-text workflow
+- Camera preview for the sign-to-text workflow, with fast-signing mode requesting up to 60 fps where supported and a 30 fps/lower-resolution fallback
 - Browser speech-recognition captions where supported
 - Text-to-speech and expanded quick-help phrases
 - Conversation Board with editable messages, large-text display, copy and speech controls
@@ -19,7 +19,7 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 Run npm install, then npm run dev.
 
 ## Important capability note
-The camera page is currently a preview, NOT a sign-language translator. Reliable sign-language translation needs a validated model trained on appropriately licensed, representative video data, including hand shape, movement, body position, facial expression and sign-language grammar. It must be evaluated with fluent signers and Deaf community partners. Do not use this prototype for critical communication or emergency decisions. The Conversation Board shares only the message selected or typed by the user; it does not verify that another person understood it. Confirm important details directly, especially names, numbers, dates, medication and directions.
+The camera page is currently a preview, NOT a sign-language translator. Fast-signing mode requests up to 60 frames per second from supported cameras and falls back when unavailable; the displayed frame rate is the device-reported capture rate, not a translation or recognition speed guarantee. Reliable sign-language translation needs a validated model trained on appropriately licensed, representative video data, including hand shape, movement, body position, facial expression and sign-language grammar. It must be evaluated with fluent signers and Deaf community partners. Do not use this prototype for critical communication or emergency decisions. The Conversation Board shares only the message selected or typed by the user; it does not verify that another person understood it. Confirm important details directly, especially names, numbers, dates, medication and directions.
 
 Live captions rely on browser speech recognition and may not be available in every browser or locale. Speech recognition may use a browser/vendor service; review that provider's privacy terms.
 
@@ -41,7 +41,7 @@ The hosted build is checked by Render's production build step (Vite). This confi
 | Feature | What it does now | Important limitation |
 |---|---|---|
 | Sign language selector | Selects ISL, ASL or BSL in the interface | Does not change or enable a recognition model |
-| Sign-to-text | Opens a local camera preview | No sign recognition or translation model is connected |
+| Sign-to-text | Opens a local camera preview; fast mode requests up to 60 fps where supported and falls back to a lower-bandwidth mode | No sign recognition or translation model is connected; camera fps is not translation accuracy or latency |
 | Live captions | Uses browser speech recognition for spoken English (India) | Browser, network, microphone permission and locale affect availability and accuracy |
 | Text-to-speech | Uses the device/browser speech engine | Voice and pronunciation depend on installed voices and device settings |
 | Quick Help | Copies or speaks fixed messages | User must verify the selected message before showing or sending |
@@ -80,3 +80,10 @@ Call Assist helps a Deaf or hard-of-hearing user prepare a service call: enter a
 A future release needs a telephony provider with an India-supported PSTN route and compliant caller ID, a secure backend that holds provider credentials, real-time streaming audio, speech recognition for Hindi and English, translation that preserves names/numbers/amounts, natural speech synthesis, interruption/turn-taking handling, explicit consent and call recording controls, and auditable confirmations. No provider keys may be placed in browser code. Every uncertain transcript must be visibly marked and repeated back for confirmation; high-impact details should be confirmed by SMS/text before any booking or payment. A human interpreter or text fallback must remain available.
 
 Do not market Call Assist as fully automatic or perfectly accurate until it passes independent testing with Deaf users, Hindi/English speakers, service providers and noisy real-world calls.
+
+
+### Fast-signing requirement
+
+Fast signing is normal fluent signing, not an edge case. The camera preview includes a fast capture request (up to 60 fps where supported), a standard 30 fps option, a lower-bandwidth fallback, and a device-reported capture setting. These controls only affect camera capture. They do not translate signs.
+
+Before any sign-recognition release, benchmark a continuous temporal model with real fluent signers at natural and fast speeds. Measure end-to-end latency (capture to stable text), dropped frames, missed short signs, false insertions, word/sign error rates and correction rate. Evaluate complete phrases and conversation turns, including facial grammar and body movement, not only isolated hand shapes. Never publish a speed or accuracy claim without test results from the target Android devices and Deaf community reviewers.
