@@ -48,6 +48,10 @@ class CheckpointValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "sign_language"):
             validate_checkpoint_metadata(self.checkpoint(sign_language="Hindi"))
 
+    def test_rejects_unhashable_language_metadata_cleanly(self):
+        with self.assertRaisesRegex(ValueError, "sign_language"):
+            validate_checkpoint_metadata(self.checkpoint(sign_language=[]))
+
     def test_rejects_invalid_architecture(self):
         for architecture in (
             [],
