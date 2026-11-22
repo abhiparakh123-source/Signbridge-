@@ -98,6 +98,10 @@ python training/inference.py --checkpoint /private-models/isl-ctc.pt --features 
 The output is a research gloss sequence only. It is not translated into Hindi or English, does not carry calibrated confidence, and is not connected to the camera or WebSocket service. Do not use it to make decisions in real conversations until it has been evaluated with fluent signers and the end-to-end streaming system has passed safety testing.
 
 
+## Decoder input integrity
+
+The incremental CTC decoder rejects non-integer frame IDs instead of silently truncating them, rejects duplicate or negative vocabulary IDs, requires blank ID `0`, and validates the carried frame state between chunks. These checks prevent malformed model output or a corrupt vocabulary from being silently converted into plausible gloss tokens. They do not improve recognition accuracy; they protect the decoding boundary.
+
 ## Experimental causal prefix emissions
 
 The training inference module exposes `iter_causal_predictions(chunks, model, device, vocabulary)` for experiments that feed landmark arrays in successive chunks. It yields only newly decoded gloss tokens and carries CTC repeat state across chunk boundaries. The model recomputes the full accumulated prefix on every chunk; this is computationally expensive and retains the full sequence. It is not a cached, bounded-memory, production streaming implementation and is not connected to the live camera service. Only causal checkpoints are accepted.
