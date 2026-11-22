@@ -1,0 +1,70 @@
+import base64
+import unittest
+
+from stream_protocol import (
+    ProtocolError,
+    validate_frame_message,
+    validate_hypothesis,
+)
+
+
+class StreamProtocolTests(unittest.TestCase):
+    def frame(self, **overrides):
+        data = {
+            "type": "frame",
+            "sign_language": "ISL",
+            "sequence": 0,
+            "timestamp_ms": 10,
+            "mime_type": "image/jpeg",
+            "frame_b64": base64.b64encode(b"image").decode("ascii"),
+        }
+        data.update(overrides)
+        return data
+
+    def test_valid_frame_envelope(self):
+        result = validate_frame_message(self.frame())
+        self.assertEqual(result["frame_bytes"], 5)
+
+    def test_language_is_mandatory_and_specific(self):
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(sign_language="Hindi"))
+
+    def test_timestamps_must_increase(self):
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(timestamp_ms=10), last_timestamp_ms=10)
+
+    def test_invalid_base64_is_rejected(self):
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(frame_b64="%%%"))
+
+    def test_provisional_text_cannot_be_spoken(self):
+        result = validate_hypothesis({
+            "type": "hypothesis", "sign_language": "ISL",
+            "state": "provisional", "text": "hello", "confidence": 0.99,
+        })
+        self.assertFalse(result["speak_allowed"])
+
+    def test_uncertain_text_cannot_be_spoken(self):
+        result = validate_hypothesis({
+            "type": "hypothesis", "sign_language": "ASL",
+            "state": "uncertain", "text": "hello", "confidence": 0.99,
+        })
+        self.assertFalse(result["speak_allowed"])
+
+    def test_stable_high_confidence_text_can_be_spoken(self):
+        result = validate_hypothesis({
+            "type": "hypothesis", "sign_language": "BSL",
+            "state": "stable", "text": "hello", "confidence": 0.95,
+        })
+        self.assertTrue(result["speak_allowed"])
+
+    def test_stable_low_confidence_text_is_not_spoken(self):
+        result = validate_hypothesis({
+            "type": "hypothesis", "sign_language": "ISL",
+            "state": "stable", "text": "hello", "confidence": 0.55,
+        })
+        self.assertFalse(result["speak_allowed"])
+
+
+if __name__ == "__main__":
+    unittest.main()
