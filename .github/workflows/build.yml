@@ -1,4 +1,4 @@
-name: Build SIGNBRIDGE
+name: Build and smoke-test SIGNBRIDGE
 on:
   push:
     branches: [main]
@@ -12,6 +12,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - run: npm install
       - run: npm run build
+      - run: npm run test:smoke
