@@ -120,3 +120,8 @@ The training inference module exposes `iter_causal_predictions(chunks, model, de
 `training/inference.py` now includes `iter_bounded_causal_predictions`. It runs a causal checkpoint over the bounded windows, skips overlap frames already emitted, and carries CTC repeat state between newly decoded regions. The optional PyTorch tests use a deterministic token-echo model to verify overlap de-duplication and CTC state across window boundaries.
 
 This is a more bounded experiment than full-prefix recomputation, but it is still not a production streaming Transformer: each window is independently evaluated, positional context restarts at each window, and there is no cached attention state. Boundary accuracy and sentence continuity are unknown until trained-model evaluation. The live service remains disabled and must not claim recognition is available.
+
+
+## Dataset duplicate-clip safeguards
+
+`dataset_tools.py` now rejects empty video files, repeated paths and byte-identical clips even when they are stored under different filenames. Content fingerprints are computed incrementally in 1 MiB blocks; raw video bytes are not loaded into memory or uploaded. This helps prevent accidental train/test leakage from duplicated recordings. It does not verify that gloss labels are correct, that consent is legally sufficient, or that the dataset represents the wider ISL community.
