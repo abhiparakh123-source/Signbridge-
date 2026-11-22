@@ -17,14 +17,14 @@ class DatasetManifestTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def write_rows(self, rows):
-        fields = ["clip_id", "signer_id", "label", "video_path", "consent", "split"]
+        fields = ["clip_id", "signer_id", "sign_language", "label", "video_path", "consent", "split"]
         with self.manifest.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fields)
             writer.writeheader()
             writer.writerows(rows)
 
     def row(self, **overrides):
-        data = dict(clip_id="a", signer_id="signer-a", label="hello",
+        data = dict(clip_id="a", signer_id="signer-a", sign_language="ISL", label="hello",
                     video_path="clips/a.webm", consent="yes", split="train")
         data.update(overrides)
         return data
@@ -41,6 +41,10 @@ class DatasetManifestTests(unittest.TestCase):
     def test_missing_consent_fails(self):
         self.write_rows([self.row(consent="no")])
         self.assertTrue(any("consent" in e for e in validate(self.manifest, self.root)))
+
+    def test_unknown_sign_language_fails(self):
+        self.write_rows([self.row(sign_language="XYZ")])
+        self.assertTrue(any("sign_language" in e for e in validate(self.manifest, self.root)))
 
     def test_path_traversal_fails(self):
         self.write_rows([self.row(video_path="../outside.webm")])
