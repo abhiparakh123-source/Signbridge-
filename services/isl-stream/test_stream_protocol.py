@@ -88,6 +88,13 @@ class StreamProtocolTests(unittest.TestCase):
             with self.subTest(threshold=threshold), self.assertRaises(ProtocolError):
                 validate_hypothesis(message, min_speak_confidence=threshold)
 
+    def test_unhashable_hypothesis_state_is_rejected_cleanly(self):
+        with self.assertRaises(ProtocolError):
+            validate_hypothesis({
+                "type": "hypothesis", "sign_language": "ISL",
+                "state": [], "text": "hello", "confidence": 0.99,
+            })
+
     def test_oversized_hypothesis_text_is_rejected(self):
         with self.assertRaisesRegex(ProtocolError, "4096-character"):
             validate_hypothesis({
