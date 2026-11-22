@@ -42,5 +42,9 @@ def validate_checkpoint_metadata(checkpoint):
     if isinstance(dropout, bool) or not isinstance(dropout, (int, float)) or not 0 <= dropout < 1:
         raise ValueError("checkpoint architecture dropout must be in [0, 1)")
     architecture["dropout"] = float(dropout)
+    causal = architecture.get("causal", False)
+    if not isinstance(causal, bool):
+        raise ValueError("checkpoint architecture causal must be a boolean")
+    architecture["causal"] = causal
 
     return vocabulary, feature_dim, language, architecture
