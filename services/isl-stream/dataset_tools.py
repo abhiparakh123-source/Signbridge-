@@ -11,7 +11,8 @@ import hashlib
 import json
 from pathlib import Path
 
-REQUIRED = {"clip_id", "signer_id", "label", "video_path", "consent", "split"}
+REQUIRED = {"clip_id", "signer_id", "sign_language", "label", "video_path", "consent", "split"}
+SIGN_LANGUAGES = {"ISL", "ASL", "BSL"}
 SPLITS = {"train", "validation", "test"}
 
 
@@ -33,6 +34,7 @@ def validate(manifest: Path, root: Path) -> list[str]:
         for line, row in enumerate(reader, start=2):
             clip_id = (row.get("clip_id") or "").strip()
             signer = (row.get("signer_id") or "").strip()
+            language = (row.get("sign_language") or "").strip().upper()
             label = (row.get("label") or "").strip()
             video_path = (row.get("video_path") or "").strip()
             consent = (row.get("consent") or "").strip().lower()
@@ -44,6 +46,8 @@ def validate(manifest: Path, root: Path) -> list[str]:
             seen_ids.add(clip_id)
             if not signer:
                 errors.append(prefix + "signer_id is required (use a private pseudonym)")
+            if language not in SIGN_LANGUAGES:
+                errors.append(prefix + "sign_language must be ISL, ASL, or BSL")
             if not label:
                 errors.append(prefix + "label is required")
             if consent not in {"yes", "true", "1"}:
@@ -64,7 +68,8 @@ def validate(manifest: Path, root: Path) -> list[str]:
             if signer and split in SPLITS:
                 signer_splits.setdefault(signer, set()).add(split)
             if label:
-                label_counts[label] = label_counts.get(label, 0) + 1
+                key = f"{language}:{label}"
+                label_counts[key] = label_counts.get(key, 0) + 1
 
     for signer, splits in signer_splits.items():
         if len(splits) > 1:
