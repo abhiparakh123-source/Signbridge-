@@ -87,6 +87,10 @@ python /path/to/Signbridge/services/isl-stream/training/train_ctc.py --manifest 
 
 The training report includes held-out gloss WER/CER and CTC loss. These are research metrics on the supplied split, not proof of sentence-level translation quality or generalisation. A model trained on a tiny family dataset must remain a private experiment and must not be used for safety-critical communication.
 
+## Training checkpoint integrity
+
+The trainer rejects non-finite model outputs and CTC losses during validation/test evaluation, and refuses to produce metrics from an empty evaluation split. Best checkpoints are written to a temporary file in the destination directory and atomically replaced only after the write succeeds, so an interrupted save does not leave a partially written checkpoint at the expected path. This protects artifact integrity; it does not improve model accuracy.
+
 ## Offline inference from a trained checkpoint
 
 After a training run produces a checkpoint, test one extracted clip locally:
