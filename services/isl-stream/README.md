@@ -84,3 +84,13 @@ python /path/to/Signbridge/services/isl-stream/training/train_ctc.py --manifest 
 ```
 
 The training report includes held-out gloss WER/CER and CTC loss. These are research metrics on the supplied split, not proof of sentence-level translation quality or generalisation. A model trained on a tiny family dataset must remain a private experiment and must not be used for safety-critical communication.
+
+## Offline inference from a trained checkpoint
+
+After a training run produces a checkpoint, test one extracted clip locally:
+
+```bash
+python training/inference.py --checkpoint /private-models/isl-ctc.pt --features /private-data/features/clip-001.npy --language ISL
+```
+
+The output is a research gloss sequence only. It is not translated into Hindi or English, does not carry calibrated confidence, and is not connected to the camera or WebSocket service. Do not use it to make decisions in real conversations until it has been evaluated with fluent signers and the end-to-end streaming system has passed safety testing.
