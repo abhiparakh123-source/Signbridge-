@@ -132,3 +132,13 @@ This is a more bounded experiment than full-prefix recomputation, but it is stil
 The immediate research priority is now the ASL pilot documented in `docs/asl-first-pilot.md`, while keeping ISL and BSL as separate language tracks. How2Sign is the leading continuous-ASL candidate, subject to its research-only CC BY-NC 4.0 terms and access requirements. Its English transcripts must not be mislabeled as ASL gloss. ASLLRP/NCSLGR is a complementary linguistically annotated continuous corpus with research/education access restrictions. WLASL, MS-ASL and ASL Citizen are isolated-sign resources only.
 
 No ASL or ISL checkpoint is currently installed. This priority change does not make ASL recognition available and does not make ASL interchangeable with ISL. The API continues to fail closed until a real language-specific model has been trained, evaluated and integrated.
+
+
+### ASL continuous corpus preparation
+
+The ASL-first research track includes a metadata validator at
+`training/asl_corpus_manifest.py`. It enforces signer-disjoint splits,
+source clip identity, timestamp ranges, explicit transcript type and recorded
+license/attribution/permission fields. It does not download or train on data.
+In particular, English translations are not relabeled as ASL gloss. See
+`docs/asl-first-pilot.md` for the schema and command.
