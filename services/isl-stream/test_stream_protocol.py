@@ -33,6 +33,12 @@ class StreamProtocolTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             validate_frame_message(self.frame(timestamp_ms=10), last_timestamp_ms=10)
 
+    def test_sequences_must_increase(self):
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(sequence=4), last_sequence=4)
+        with self.assertRaises(ProtocolError):
+            validate_frame_message(self.frame(sequence=2), last_sequence=3)
+
     def test_invalid_base64_is_rejected(self):
         with self.assertRaises(ProtocolError):
             validate_frame_message(self.frame(frame_b64="%%%"))
