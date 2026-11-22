@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import math
 from typing import Any
 
 SUPPORTED_LANGUAGES = {"ISL", "ASL", "BSL"}
@@ -25,7 +26,7 @@ def validate_frame_message(
     if not isinstance(message, dict) or message.get("type") != "frame":
         raise ProtocolError("message type must be 'frame'")
     language = message.get("sign_language")
-    if language not in SUPPORTED_LANGUAGES:
+    if not isinstance(language, str) or language not in SUPPORTED_LANGUAGES:
         raise ProtocolError("sign_language must be ISL, ASL, or BSL")
     sequence = message.get("sequence")
     timestamp = message.get("timestamp_ms")
@@ -38,7 +39,7 @@ def validate_frame_message(
     if timestamp <= last_timestamp_ms:
         raise ProtocolError("timestamp_ms must increase monotonically")
     mime = message.get("mime_type")
-    if mime not in SUPPORTED_IMAGE_TYPES:
+    if not isinstance(mime, str) or mime not in SUPPORTED_IMAGE_TYPES:
         raise ProtocolError("mime_type must be JPEG, PNG, or WebP")
     encoded = message.get("frame_b64")
     if not isinstance(encoded, str) or not encoded:
@@ -68,7 +69,7 @@ def validate_hypothesis(
     if not isinstance(message, dict) or message.get("type") != "hypothesis":
         raise ProtocolError("message type must be 'hypothesis'")
     language = message.get("sign_language")
-    if language not in SUPPORTED_LANGUAGES:
+    if not isinstance(language, str) or language not in SUPPORTED_LANGUAGES:
         raise ProtocolError("sign_language must be ISL, ASL, or BSL")
     state = message.get("state")
     if state not in {"provisional", "stable", "uncertain"}:
@@ -76,13 +77,15 @@ def validate_hypothesis(
     text = message.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ProtocolError("text must be a non-empty string")
+    if len(text) > 4096:
+        raise ProtocolError("text exceeds the 4096-character limit")
     confidence = message.get("confidence")
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
         raise ProtocolError("confidence must be a number from 0 to 1")
-    if not 0 <= confidence <= 1:
-        raise ProtocolError("confidence must be a number from 0 to 1")
-    if not 0 <= min_speak_confidence <= 1:
-        raise ProtocolError("min_speak_confidence must be between 0 and 1")
+    if not math.isfinite(confidence) or not 0 <= confidence <= 1:
+        raise ProtocolError("confidence must be a finite number from 0 to 1")
+    if (isinstance(min_speak_confidence, bool) or not isinstance(min_speak_confidence, (int, float)) or not math.isfinite(min_speak_confidence) or not 0 <= min_speak_confidence <= 1):
+        raise ProtocolError("min_speak_confidence must be a finite number between 0 and 1")
     can_speak = state == "stable" and confidence >= min_speak_confidence
     return {
         "type": "hypothesis",
