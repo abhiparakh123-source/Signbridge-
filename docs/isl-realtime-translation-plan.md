@@ -18,15 +18,15 @@ The system must never silently turn an uncertain prediction into a confident sen
 - Described architecture: MediaPipe Holistic keypoints (hands, pose and face), ST-GCN spatial encoder, Transformer temporal encoder, CTC gloss decoder, optional IndicTrans2 gloss-to-text.
 - Its README reports 30.77% word error rate on its continuous-recognition setup, trained from 4,287 INCLUDE word-level videos.
 - The repository documents local inference requiring a GPU with at least 8 GB VRAM.
-- The repository README says MIT; verify the repository's actual license file and every dependency/model/data license before copying code or redistributing weights.
+- The repository README says MIT, but the Git tree currently has no separate LICENSE file. Treat the code license as unverified until the owner supplies a complete license file; do not copy or redistribute code/weights on the README statement alone. Audit every dependency/model/data license too.
 - Treat this as a research baseline to reproduce and evaluate, not a production-ready interpreter.
 
 ### 2. Continuous sentence data: ISL-CSLTR
 
 - Dataset record: https://data.mendeley.com/datasets/kcmpdxky7p/1
 - Describes 700 annotated videos, 100 spoken-language sentences and seven signers.
-- The record lists CC BY 4.0.
-- Small signer count means it is useful for an initial pipeline and sanity checks, not sufficient evidence of generalisation.
+- The record lists CC BY 4.0; verify attribution requirements against the downloaded record before use.
+- The record describes recordings from two native signers and four SASTRA students. This very small signer pool makes it useful for pipeline prototyping, not evidence of generalisation to the wider Deaf community.
 
 ### 3. Sentence-level video/gloss data: ISLVT
 
@@ -47,7 +47,7 @@ The system must never silently turn an uncertain prediction into a confident sen
 - Paper: https://www.nature.com/articles/s41598-026-60893-0
 - Describes 4,222 sentence videos and more than 6,500 words.
 - The paper says raw videos cannot be redistributed because of copyright; annotations, splits, timestamps and preprocessing scripts are available.
-- Use only in ways permitted by the paper and rights holders. Do not scrape, redistribute or train on source broadcast videos without the required rights.
+- Use only in ways permitted by the paper and rights holders. Do not scrape, redistribute or train on source broadcast videos without the required rights. Annotation availability does not grant rights to the underlying broadcast video.
 
 ## Proposed model pipeline
 
@@ -79,6 +79,10 @@ The system must never silently turn an uncertain prediction into a confident sen
 **Gate D — Android pilot:** test on representative mid-range Android phones, not only a desktop GPU. Ensure camera, heat, network loss and battery do not cause silent failures.
 
 **Gate E — Limited release:** clearly label supported vocabulary/domains, uncertainty, limitations and fallback options. Keep text entry and human interpreter alternatives available.
+
+## Streaming service scaffold
+
+A deliberately non-translating FastAPI scaffold now lives in `services/isl-stream/`. Its health endpoint reports process health; its recognition-status endpoint returns HTTP 503 with `model_not_configured`; its WebSocket session explicitly reports recognition unavailable and closes rather than returning guessed labels. This is an API boundary only, not an inference engine. It is not yet connected to the web or Android app and is not deployed.
 
 ## Immediate next actions
 
