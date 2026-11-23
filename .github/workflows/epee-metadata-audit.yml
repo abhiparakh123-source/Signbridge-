@@ -9,6 +9,7 @@ on:
     paths:
       - "services/isl-stream/training/audit_epee_metadata.py"
       - "services/isl-stream/training/test_audit_epee_metadata.py"
+      - "services/isl-stream/training/design_epee_signer_split.py"
       - ".github/workflows/epee-metadata-audit.yml"
 
 permissions:
