@@ -9,6 +9,7 @@ import math
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 BASE = "https://huggingface.co/datasets/CLERC-DATA/epee/resolve/main"
@@ -67,6 +68,7 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
     gloss_count = 0
     oval_scores = []
     shape_counts = Counter()
+    remote_candidates = []
     for index, row in enumerate(rows, 2):
         clip = row["clip_id"].strip()
         signer = row["signer_id"].strip()
@@ -135,14 +137,33 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
                 if " ".join(segment_glosses) != " ".join(expected_glosses.split()):
                     raise ValueError("metadata/annotation gloss sequence mismatch")
             if check_remote_headers:
-                header = fetch(f"{BASE}/keypoints/{clip}.npy", "bytes=0-65535", limit=65536)
-                shape = npy_shape_from_header(header)
-                if shape != (frames, 128, 3):
-                    raise ValueError(f"keypoint header shape {shape}, expected {(frames, 128, 3)}")
-                shape_counts[str(shape)] += 1
-                report["keypoint_header_checks"] += 1
+                remote_candidates.append((index, clip, frames))
         except Exception as exc:
             report["errors"].append({"row": index, "clip_id": clip, "error": str(exc)})
+
+    if check_remote_headers:
+        def inspect_header(item):
+            row_index, clip_id, frame_count = item
+            header = fetch(f"{BASE}/keypoints/{clip_id}.npy", "bytes=0-65535", limit=65536)
+            shape = npy_shape_from_header(header)
+            if shape != (frame_count, 128, 3):
+                raise ValueError(f"keypoint header shape {shape}, expected {(frame_count, 128, 3)}")
+            return shape
+
+        # Bounded concurrency avoids thousands of slow sequential HTTP requests.
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            futures = {pool.submit(inspect_header, item): item for item in remote_candidates}
+            for future in as_completed(futures):
+                row_index, clip_id, _ = futures[future]
+                try:
+                    shape = future.result()
+                    shape_counts[str(shape)] += 1
+                    report["keypoint_header_checks"] += 1
+                except Exception as exc:
+                    report["errors"].append({
+                        "row": row_index, "clip_id": clip_id,
+                        "error": f"remote keypoint header: {exc}",
+                    })
 
     report["unique_clip_ids"] = len(ids)
     report["unique_signers"] = len(report["signer_counts"])
