@@ -32,7 +32,7 @@ class AuditEpeeMetadataTests(unittest.TestCase):
         report = audit(None, self.metadata_bytes())
         self.assertEqual(report["metadata_rows"], 2)
         self.assertEqual(report["unique_signers"], 2)
-        self.assertEqual(report["parallel_phrase_coverage"], {"2": 1})
+        self.assertEqual(report["parallel_phrase_coverage"], {2: 1})
         self.assertEqual(report["errors"], [])
         self.assertFalse(report["video_downloaded"])
         self.assertFalse(report["array_payload_downloaded"])
@@ -55,9 +55,14 @@ class AuditEpeeMetadataTests(unittest.TestCase):
             self.assertEqual(report["errors"], [])
 
     def test_flags_duplicate_ids_and_invalid_metadata(self):
-        data = self.metadata_bytes().decode().replace("c2,B,7,yes,Hello,30,8,0.95,verified,HELLO|QUESTION",
-                                                      "c1,B,7,yes,Hello,0,1,1.5,unverified,")
-        report = audit(None, data.encode())
+        header = "clip_id,signer_id,phrase_id,parallel,text_en,fps,n_frames,oval_detection,hand_slots,gloss_sequence\n"
+        rows = [
+            "c1,A,7,yes,Hello,30,8,0.95,verified,HELLO|QUESTION",
+            "c1,B,7,yes,Hello,30,8,0.95,verified,HELLO|QUESTION",
+            "c3,C,8,no,Thanks,0,1,0.5,unverified,THANKS",
+            "c4,D,9,no,Please,30,8,1.5,verified,PLEASE",
+        ]
+        report = audit(None, (header + "\n".join(rows) + "\n").encode())
         self.assertTrue(any("duplicate" in str(item["error"]) for item in report["errors"]))
         self.assertTrue(any("fps" in str(item["error"]) for item in report["errors"]))
         self.assertTrue(any("oval_detection" in str(item["error"]) for item in report["errors"]))
