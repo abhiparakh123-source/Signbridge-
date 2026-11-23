@@ -43,6 +43,7 @@ def build_plan(metadata_path: Path) -> dict:
     split_signers = defaultdict(set)
     split_parallel_phrases = defaultdict(set)
     split_nonparallel_phrases = defaultdict(set)
+    parallel_phrase_splits = defaultdict(set)
     for row in rows:
         clip = row["clip_id"].strip()
         signer = row["signer_id"].strip()
@@ -55,8 +56,11 @@ def build_plan(metadata_path: Path) -> dict:
         split = signer_owner[signer]
         split_clips[split].append(clip)
         split_signers[split].add(signer)
-        target = split_parallel_phrases if row["parallel"].strip().lower() == "yes" else split_nonparallel_phrases
-        target[split].add(phrase)
+        if row["parallel"].strip().lower() == "yes":
+            split_parallel_phrases[split].add(phrase)
+            parallel_phrase_splits[phrase].add(split)
+        else:
+            split_nonparallel_phrases[split].add(phrase)
 
     observed_signers = {r["signer_id"].strip() for r in rows}
     if observed_signers != set(signer_owner):
@@ -81,6 +85,13 @@ def build_plan(metadata_path: Path) -> dict:
             overlap = sorted(split_parallel_phrases[left] & split_parallel_phrases[right])
             parallel_intersections[f"{left}__{right}"] = overlap
 
+    train_phrases = split_parallel_phrases["train"]
+    validation_phrases = split_parallel_phrases["validation"]
+    test_phrases = split_parallel_phrases["test"]
+    test_only_phrases = sorted(test_phrases - train_phrases)
+    test_seen_in_train = sorted(test_phrases & train_phrases)
+    validation_missing_from_train = sorted(validation_phrases - train_phrases)
+
     return {
         "dataset": "CLERC-DATA/epee",
         "release": "v0.4",
@@ -98,10 +109,25 @@ def build_plan(metadata_path: Path) -> dict:
             for split in names
         },
         "parallel_phrase_intersections": parallel_intersections,
+        "parallel_phrase_split_membership": {
+            phrase: sorted(splits) for phrase, splits in sorted(parallel_phrase_splits.items())
+        },
+        "evaluation_protocol": {
+            "primary_seen_phrase_test_count": len(test_seen_in_train),
+            "primary_seen_phrase_test_ids": test_seen_in_train,
+            "test_only_zero_shot_phrase_count": len(test_only_phrases),
+            "test_only_zero_shot_phrase_ids": test_only_phrases,
+            "validation_phrases_missing_from_train": validation_missing_from_train,
+            "recommendation": (
+                "Report signer-held-out test metrics separately for phrases represented in "
+                "training and for test-only phrases; do not combine them into one headline score."
+            ),
+        },
         "limitations": [
             "Signer-disjoint, but not phrase-disjoint: the parallel phrase grid intentionally overlaps across splits.",
             "Validation and test each contain only one parallel-grid signer; held-out signer estimates will have high uncertainty.",
-            "The ECHO-only parallel phrases are not represented in train or validation.",
+            "The ECHO-only parallel phrases are test-only zero-shot items; report them separately.",
+            "Phrase IDs absent from a held-out signer must not be treated as recognition failures for that signer."
             "Dataset license and written permission must be cleared before training or retaining derived model artifacts.",
         ],
     }
