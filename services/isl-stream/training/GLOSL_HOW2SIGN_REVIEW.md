@@ -1,0 +1,63 @@
+# GloSL How2Sign ASL candidate review
+
+Status: **candidate only — not approved for training or redistribution**.
+
+This document records the checks required before importing any GloSL–How2Sign row into SIGNBRIDGE's ASL training pipeline. A public dataset page, a license label, or a non-empty `gloss` cell is not sufficient evidence of consent, annotation validity, or permission for this project's intended use.
+
+## Candidate facts to verify against the current source
+
+The dataset page describes 34,305 ASL-to-English samples (61.15 hours), with 30,814 train, 1,527 dev, and 1,964 test rows. It lists `annotations.csv`, `card.json`, pose files, and video files; the pose representation is described as 543-point MediaPipe Holistic. The listed license is CC BY-NC 4.0 and the upstream source is How2Sign.
+
+Treat these as source-reported facts, not an independent rights determination. Review the current `card.json`, source dataset terms, upstream How2Sign terms, and attribution requirements before any use. Do not assume the repackager can grant rights it did not receive.
+
+## Local annotation inventory
+
+Do not clone or download the full video/pose corpus just to inspect its metadata. Obtain only the annotation CSV and provenance files through an allowed route, then run:
+
+```bash
+python -m training.audit_glosl_annotations \
+  --annotations /path/to/annotations.csv \
+  --output /path/to/private-review/glosl-audit.json
+```
+
+Review all of the following in the report and source files:
+
+- Exact `gloss_type` values and their documented meanings.
+- Whether each gloss is a human-annotated ASL gloss, a generated label, or another representation.
+- Empty/malformed glosses, IDs, signer IDs, and split labels.
+- Duplicate IDs and video references crossing splits.
+- Signer overlap across train/dev/test. The published split description is video-disjoint; do not describe it as signer-disjoint unless the audit proves that.
+- Timestamp, frame-rate, frame-count, and video/pose alignment for a sampled set of clips.
+- Full `card.json` provenance, source revision, transformation history, and upstream terms.
+
+The audit script deliberately reports `training_approved: false`. It is an inventory tool, not an authorization mechanism.
+
+## Required authorization ledger
+
+Before converting any row to SIGNBRIDGE's training manifest, maintain a separate, private, reviewed ledger keyed by clip ID and signer ID. The ledger must contain real evidence and a reviewer/date for:
+
+1. The applicable upstream and repackaging license/terms, with permitted use for this private non-commercial project confirmed.
+2. Explicit consent/authorization covering the source recording and the intended processing/training use, or authoritative documentation that establishes the relevant permission.
+3. Required attribution and citation text.
+4. Permission to retain the derived pose/features and resulting model/checkpoints.
+5. Any restrictions on redistribution, publication, or deletion.
+
+Never synthesize `consent=yes`, `permission_status=approved`, or a license ID from the dataset's public visibility or README badge. Do not put private consent documents, family videos, or authorization records in this public repository.
+
+## Import gates
+
+A reviewed adapter may map GloSL `dev` to SIGNBRIDGE `validation` only after all checks pass. It must preserve original clip IDs, signer IDs, timestamps, source URLs, attribution, and the exact gloss label/type. It must not use the English `text` field as gloss.
+
+Training remains blocked until:
+
+- gloss semantics and provenance are verified;
+- authorization is documented for every included clip/signer;
+- all required train/validation/test splits are present and signer-disjoint for evaluation;
+- media/pose alignment and feature format are validated;
+- the private manifest passes the existing strict consent and path checks.
+
+If signer overlap exists, do not silently accept it: create a genuinely signer-disjoint split only if the source permissions and data volume allow it, otherwise report the limitation and do not claim signer-independent evaluation.
+
+## Current decision
+
+**Do not download the 85 GB corpus or start training yet.** First inspect the small annotation/provenance files and obtain the required permissions. This review note does not certify legal rights, signer consent, gloss quality, or model readiness.
