@@ -40,6 +40,12 @@ class BoundedWindowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "finite"):
             list(iter_bounded_windows([np.array([[float("nan")]])], 5))
 
+    def test_rejects_non_numeric_and_zero_width_features(self):
+        with self.assertRaisesRegex(ValueError, "finite numeric"):
+            list(iter_bounded_windows([np.array([["left", "right"]])], 5))
+        with self.assertRaisesRegex(ValueError, "feature_dim must be positive"):
+            list(iter_bounded_windows([np.empty((2, 0), dtype=np.float32)], 5))
+
     def test_rejects_invalid_window_settings(self):
         for maximum, overlap in [(0, 0), (4, 4), (4, -1), (True, 0)]:
             with self.subTest(maximum=maximum, overlap=overlap):
