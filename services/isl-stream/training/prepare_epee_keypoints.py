@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import numpy as np
 
@@ -86,10 +87,52 @@ def read_annotations(path: Path, row: dict[str, str], n_frames: int, fps: float)
     return annotation_gloss
 
 
+REQUIRED_PERMISSION_USES = {
+    "download_dataset",
+    "create_derived_features",
+    "train_model",
+    "retain_model_checkpoint",
+    "deploy_private_non_revenue_family_app",
+}
+
+
+def validate_permission_record(path: Path) -> dict:
+    """Require a scoped, explicit written-rights review before any conversion."""
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read permission record: {exc}") from exc
+    if not isinstance(record, dict):
+        raise ValueError("permission record must be a JSON object")
+    if record.get("status") != "approved":
+        raise ValueError("permission record status must be approved; conversion is blocked")
+    if record.get("dataset_id") != DATASET_ID:
+        raise ValueError(f"permission record dataset_id must be {DATASET_ID}")
+    if record.get("license_id") != "CC-BY-NC-SA-4.0":
+        raise ValueError("permission record license_id must match the dataset licence")
+    if not str(record.get("approved_by", "")).strip():
+        raise ValueError("permission record must identify the rights approver")
+    if not str(record.get("reviewed_at", "")).strip():
+        raise ValueError("permission record must include reviewed_at")
+    evidence = str(record.get("written_permission_reference", "")).strip()
+    parsed = urlsplit(evidence)
+    if not evidence or parsed.scheme not in {"https", "http"} or not parsed.netloc:
+        raise ValueError("permission record must reference written permission (HTTP(S) URL)")
+    uses = record.get("approved_uses")
+    if not isinstance(uses, list):
+        raise ValueError("permission record approved_uses must be a list")
+    missing = sorted(REQUIRED_PERMISSION_USES - set(uses))
+    if missing:
+        raise ValueError("permission record does not approve required uses: " + ", ".join(missing))
+    return record
+
+
 def convert_dataset(
     root: Path, output_root: Path, train_signers: list[str],
     validation_signers: list[str], test_signers: list[str],
+    permission_record: Path,
 ) -> dict:
+    validate_permission_record(permission_record)
     root, output_root = root.resolve(), output_root.resolve()
     metadata_path = root / "metadata.csv"
     if not metadata_path.is_file():
@@ -152,7 +195,7 @@ def convert_dataset(
                 "consent": "yes", "split": split, "source_dataset": DATASET_ID,
                 "source_clip_id": clip_id, "phrase_id": phrase,
                 "license_id": "CC-BY-NC-SA-4.0",
-                "permission_status": "pending_review",
+                "permission_status": "approved",
                 "source_url": DATASET_URL, "feature_dim": str(FEATURE_DIM),
                 "feature_sha256": digest,
             })
@@ -195,12 +238,10 @@ def main() -> int:
         help="path to written permission/rights review record; its presence is not legal validation",
     )
     args = parser.parse_args()
-    if not args.permission_record.is_file():
-        parser.error("--permission-record must point to the written permission review record")
     try:
         result = convert_dataset(
             args.dataset_root, args.output_root, args.train_signers,
-            args.validation_signers, args.test_signers,
+            args.validation_signers, args.test_signers, args.permission_record,
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
