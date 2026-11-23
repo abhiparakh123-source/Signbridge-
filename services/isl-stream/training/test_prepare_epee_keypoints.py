@@ -23,13 +23,18 @@ class EpeeAdapterTests(unittest.TestCase):
     def test_annotation_identity_and_timing(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "clip.json"
+            row = {"clip_id": "c1", "signer_id": "A", "phrase_id": "p1",
+                   "text_en": "Hello", "parallel": "yes", "gloss_sequence": "HELLO"}
             path.write_text(json.dumps({
                 "clip_id": "c1", "signer_id": "A", "sign_language": "ASL",
+                "phrase_id": "p1", "text_en": "Hello", "parallel": True,
+                "fps": 30.0, "n_frames": 30,
                 "segments": [{"gloss": "HELLO", "start": 0.1, "end": 0.5}],
             }), encoding="utf-8")
-            self.assertEqual(read_annotations(path, "c1", "A", 30, 30.0), "HELLO")
+            self.assertEqual(read_annotations(path, row, 30, 30.0), "HELLO")
+            row["clip_id"] = "c2"
             with self.assertRaisesRegex(ValueError, "identity"):
-                read_annotations(path, "c2", "A", 30, 30.0)
+                read_annotations(path, row, 30, 30.0)
 
     def test_end_to_end_creates_384_dim_features_and_disjoint_splits(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -43,9 +48,12 @@ class EpeeAdapterTests(unittest.TestCase):
                 rows.append({
                     "clip_id": clip, "signer_id": signer, "phrase_id": phrase,
                     "fps": "30", "n_frames": "8", "hand_slots": "verified",
+                    "parallel": "yes", "text_en": "Hello", "gloss_sequence": "HELLO",
                 })
                 (root / "annotations" / f"{clip}.json").write_text(json.dumps({
                     "clip_id": clip, "signer_id": signer, "sign_language": "ASL",
+                    "phrase_id": phrase, "text_en": "Hello", "parallel": True,
+                    "fps": 30.0, "n_frames": 8,
                     "segments": [{"gloss": "HELLO", "start": 0.0, "end": 0.2}],
                 }), encoding="utf-8")
                 np.save(root / "keypoints" / f"{clip}.npy",
