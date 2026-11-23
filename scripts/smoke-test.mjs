@@ -31,7 +31,10 @@ const required = [
   ["ASL-first default language", /const LANGS=\["American Sign Language \(ASL\)","Indian Sign Language \(ISL\)","British Sign Language \(BSL\)"\]/],
   ["iPhone-compatible media recorder formats", /video\/mp4/],
   ["family camera preview attachment lifecycle", /videoRef\.current&&streamRef\.current/],
-  ["conversation confirmation warning", /Confirm, don't guess/]
+  ["conversation confirmation warning", /Confirm, don't guess/],
+  ["conversation board voice-language selector", /board-voice-language/],
+  ["Hindi voice locale support", /utterance\\.lang=language/],
+  ["Hindi and English board voice options", /Hindi \\(India\\).*English/s]
 ];
 for (const [label, pattern] of required) {
   if (!pattern.test(app)) throw new Error(`Safety smoke check failed: ${label}`);
