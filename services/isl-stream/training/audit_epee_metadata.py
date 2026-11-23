@@ -194,6 +194,11 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
         report["warnings"].append("clip IDs are not all unique")
     if check_remote_headers and report["keypoint_header_checks"] != len(rows):
         report["warnings"].append("not every keypoint NPY header was verified")
+    report["error_summary"] = dict(sorted(Counter(
+        (item.get("error", "unknown") if isinstance(item, dict) else str(item))
+        for item in report["errors"]
+    ).items()))
+    report["sample_errors"] = report["errors"][:20]
     return report
 
 
