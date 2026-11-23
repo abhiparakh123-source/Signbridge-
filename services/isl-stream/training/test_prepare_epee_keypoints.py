@@ -43,7 +43,7 @@ class EpeeAdapterTests(unittest.TestCase):
             (root / "keypoints").mkdir()
             rows = []
             for clip, signer, phrase in [
-                ("c_train", "A", "p1"), ("c_val", "B", "p2"), ("c_test", "C", "p3")
+                ("c_train", "A", "p1"), ("c_val", "B", "p1"), ("c_test", "C", "p1")
             ]:
                 rows.append({
                     "clip_id": clip, "signer_id": signer, "phrase_id": phrase,
