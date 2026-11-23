@@ -85,3 +85,16 @@ The public Hugging Face `card.json` was inspected directly (revision shown on th
 The CSV's 6.8 MB file page confirms the file exists but its contents are too large for the page renderer. **No row-level CSV values or gloss_type counts were inspected.** The card's empty `annotation_types` makes the next step more cautious: retrieve and sample the actual CSV before deciding whether it is usable at all.
 
 Updated decision: **not approved; gloss supervision is currently unsubstantiated by the machine-readable card.** Do not train or prepare a training manifest from this dataset on the strength of the README schema alone.
+
+
+## Annotation CSV retrieval attempt (23 Nov 2026)
+
+The Hugging Face Data Studio preview was opened. It reports a train preview of 114 rows, but the rendered table exposes only the `id` column and clip IDs; it does not expose `gloss`, `gloss_type`, `signer`, `text`, or timing columns. The page also reports that its DuckDB WASM SQL console failed to initialize. Direct browser retrieval of the CSV and the datasets-server rows endpoint was not available through the current inspection route.
+
+Therefore:
+- No CSV row contents were inspected.
+- No `gloss_type` distribution or gloss examples can be reported.
+- No signer overlap, empty gloss, timing, or video-reference counts can be independently recomputed.
+- The previous claim that the card's empty `annotation_types` makes gloss supervision unsubstantiated remains a caution, not proof that every CSV gloss is invalid.
+
+Next retrieval route: obtain only `annotations.csv` (6.8 MB) and `card.json` from the Hugging Face file download controls or HF CLI, then run the repository audit locally. Do not fetch `videos/` or `poses/` for this metadata-only step. Training remains blocked.
