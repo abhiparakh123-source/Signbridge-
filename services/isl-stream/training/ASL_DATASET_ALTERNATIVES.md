@@ -29,7 +29,7 @@ The failed GloSL-How2Sign CSV audit is recorded in [GLOSL_HOW2SIGN_REVIEW.md](./
 1. Obtain written permission/clarification from CLERC for this exact non-revenue family accessibility app, model training, retaining an embedded checkpoint, and whether model weights are a share-alike adaptation.
 2. Retrieve only the small metadata/keypoint release after confirming licence terms; no raw signer video is included in this release.
 3. Audit all 2,400 rows: missing/duplicate clip IDs, signer counts, per-signer clip counts, segment count, valid start/end bounds against frame count/FPS, empty glosses, hand-slot verification, non-finite keypoints, and phrase overlap.
-4. Build strict signer-disjoint folds. Do not randomly split clips: the same signer and same parallel phrase may otherwise leak across train and test. The public viewer lists one `train` split; the dataset's reported external held-out-signer benchmark is not a ready-made split in the downloadable table.
+4. Build strict signer-disjoint folds. Do not randomly split clips: the same signer must never cross splits. Parallel phrase IDs intentionally repeat across signers; shared prompts are part of the published signer-generalization protocol, not signer leakage. The public viewer lists one `train` split; the dataset's reported external held-out-signer benchmark is not a ready-made split in the downloadable table.
 5. Create a dedicated 128-landmark feature adapter. The current MediaPipe Holistic extractor emits 1,699 features; those arrays are incompatible without a deliberate schema mapping and validation.
 6. Train a small gloss-sequence baseline, report held-out signer WER/CER and per-gloss metrics, and compare with a simple baseline. Do not call it general translation or live recognition.
 7. Keep English translation as a separate downstream task; gloss sequences are not direct English sentences.
@@ -71,11 +71,11 @@ reinterpret these coordinates as the existing 1,699-feature Holistic schema.
 
 The adapter:
 - reads the release's `metadata.csv`, per-clip annotation JSON and keypoint NPY;
-- checks annotation identity, ASL language, gloss text, segment time bounds,
+- checks annotation identity, metadata consistency, gloss text, segment time bounds,
   frame count, finite coordinates and verified hand slots;
 - requires explicit train/validation/test signer lists;
-- rejects signer overlap and phrase IDs crossing splits (important for the
-  five-signer parallel phrase grid);
+- rejects signer overlap while allowing parallel phrase IDs to recur across
+  signer-disjoint splits, as required for unseen-signer evaluation;
 - writes a standard CTC feature manifest and per-clip 384-D arrays;
 - requires a local `--permission-record` file before conversion.
 
@@ -92,9 +92,10 @@ python prepare_epee_keypoints.py \
 ```
 
 The signer names above are illustrative only: inspect the actual metadata and
-choose signer groups whose phrase IDs do not overlap. The script deliberately
-fails if a selected phrase is shared across splits. Do not assume that the
-example partition is valid for the downloaded release.
+choose signer groups with no signer overlap. Phrase IDs may intentionally recur
+across splits because different signers perform the same prompt; this supports
+unseen-signer evaluation. Do not assume that the example partition is valid for
+the downloaded release.
 
 This adapter and its tests are code scaffolding, not permission, dataset audit,
 model training, or recognition. The permission-record flag only requires a
