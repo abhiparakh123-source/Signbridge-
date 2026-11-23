@@ -31,11 +31,38 @@ def inspect_table(path: Path) -> dict:
 
     gloss_cols = sorted(headers & GLOSS_COLUMNS)
     translation_cols = sorted(headers & TRANSLATION_COLUMNS)
-    required_present = bool(gloss_cols and headers & ID_COLUMNS and headers & SPLIT_COLUMNS)
+    id_cols = sorted(headers & ID_COLUMNS)
+    split_cols = sorted(headers & SPLIT_COLUMNS)
+    signer_cols = sorted(headers & SIGNER_COLUMNS)
     nonempty_gloss_rows = 0
+    missing_id_rows = 0
+    missing_split_rows = 0
+    missing_signer_rows = 0
+    duplicate_ids = 0
+    seen_ids = set()
     if gloss_cols:
-        key = gloss_cols[0]
-        nonempty_gloss_rows = sum(1 for row in rows if (row.get(key) or "").strip())
+        gloss_key = gloss_cols[0]
+        nonempty_gloss_rows = sum(1 for row in rows if (row.get(gloss_key) or "").strip())
+    if id_cols and split_cols and signer_cols:
+        id_key, split_key, signer_key = id_cols[0], split_cols[0], signer_cols[0]
+        for row in rows:
+            clip_id = (row.get(id_key) or "").strip()
+            split = (row.get(split_key) or "").strip().lower()
+            signer = (row.get(signer_key) or "").strip()
+            missing_id_rows += not bool(clip_id)
+            missing_split_rows += split not in {"train", "validation", "test"}
+            missing_signer_rows += not bool(signer)
+            if clip_id:
+                if clip_id in seen_ids:
+                    duplicate_ids += 1
+                seen_ids.add(clip_id)
+
+    structure_present = bool(gloss_cols and id_cols and split_cols and signer_cols)
+    structurally_complete = (
+        structure_present and rows > 0 and missing_id_rows == 0
+        and missing_split_rows == 0 and missing_signer_rows == 0
+        and duplicate_ids == 0
+    )
 
     return {
         "path": str(path),
@@ -44,9 +71,13 @@ def inspect_table(path: Path) -> dict:
         "columns": sorted(headers),
         "candidate_gloss_columns": gloss_cols,
         "translation_columns_not_usable_as_gloss": translation_cols,
-        "has_signer_column": bool(headers & SIGNER_COLUMNS),
+        "has_signer_column": bool(signer_cols),
         "nonempty_gloss_rows": nonempty_gloss_rows,
-        "candidate_for_manual_review": required_present and nonempty_gloss_rows > 0,
+        "missing_id_rows": missing_id_rows,
+        "missing_or_invalid_split_rows": missing_split_rows,
+        "missing_signer_rows": missing_signer_rows,
+        "duplicate_clip_ids": duplicate_ids,
+        "candidate_for_manual_review": structurally_complete and nonempty_gloss_rows > 0,
         "training_approved": False,
         "reason": (
             "Candidate only: verify annotation provenance, gloss convention, signer IDs, "
