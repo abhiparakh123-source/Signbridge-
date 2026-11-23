@@ -38,7 +38,7 @@ jobs:
               allow_patterns=["metadata.csv", "annotations/*.json"],
           )
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write(f"EPEE_DATASET_ROOT={path}\\n")
+              env.write(f"EPEE_DATASET_ROOT={path}\n")
           print(f"Metadata and annotation JSON downloaded to: {path}")
           PY
       - name: Run full metadata and annotation audit
