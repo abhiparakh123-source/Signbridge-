@@ -62,6 +62,8 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
         return report
 
     ids, phrase_signers = set(), defaultdict(set)
+    signer_phrase_ids = defaultdict(lambda: {"parallel": set(), "nonparallel": set()})
+    signer_row_counts = defaultdict(lambda: {"parallel": 0, "nonparallel": 0})
     gloss_count = 0
     oval_scores = []
     shape_counts = Counter()
@@ -86,9 +88,15 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
             if not row["text_en"].strip() or not row["gloss_sequence"].strip():
                 raise ValueError("empty English prompt or gloss sequence")
             gloss_count += len([g for g in row["gloss_sequence"].split("|") if g.strip()])
+            phrase_id = row["phrase_id"].strip()
             if row["parallel"].strip().lower() == "yes":
                 report["parallel_rows"] += 1
-                phrase_signers[row["phrase_id"]].add(signer)
+                phrase_signers[phrase_id].add(signer)
+                signer_phrase_ids[signer]["parallel"].add(phrase_id)
+                signer_row_counts[signer]["parallel"] += 1
+            else:
+                signer_phrase_ids[signer]["nonparallel"].add(phrase_id)
+                signer_row_counts[signer]["nonparallel"] += 1
             if root is not None:
                 ann_path = root / "annotations" / f"{clip}.json"
                 if not ann_path.is_file():
@@ -145,6 +153,19 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
         "mean": sum(oval_scores) / len(oval_scores),
     } if oval_scores else None)
     report["parallel_phrase_coverage"] = dict(sorted(Counter(len(v) for v in phrase_signers.values()).items()))
+    # Exact assignments support a data-grounded signer-disjoint split.
+    report["parallel_phrase_signers"] = {
+        phrase: sorted(signers) for phrase, signers in sorted(phrase_signers.items())
+    }
+    report["signer_phrase_coverage"] = {
+        signer: {
+            "parallel_rows": signer_row_counts[signer]["parallel"],
+            "nonparallel_rows": signer_row_counts[signer]["nonparallel"],
+            "parallel_phrase_ids": sorted(signer_phrase_ids[signer]["parallel"]),
+            "nonparallel_phrase_ids": sorted(signer_phrase_ids[signer]["nonparallel"]),
+        }
+        for signer in sorted(signer_row_counts)
+    }
     if len(rows) != 2400:
         report["warnings"].append(f"expected 2400 clips for v0.4, found {len(rows)}")
     report["keypoint_shape_counts"] = dict(shape_counts)
