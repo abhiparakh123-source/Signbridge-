@@ -37,6 +37,13 @@ class EpeeAdapterTests(unittest.TestCase):
             self._approved_permission_record(path)
             self.assertEqual(validate_permission_record(path)["status"], "approved")
 
+    def test_user_attestation_is_recorded_without_fabricated_identity_or_url(self):
+        record = validate_permission_record(None, user_attested=True)
+        self.assertEqual(record["status"], "user_attested")
+        self.assertEqual(record["authorization_basis"], "user_confirmation_in_conversation")
+        self.assertNotIn("approved_by", record)
+        self.assertNotIn("written_permission_reference", record)
+
     def test_permission_record_rejects_missing_checkpoint_rights(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "permission.json"
