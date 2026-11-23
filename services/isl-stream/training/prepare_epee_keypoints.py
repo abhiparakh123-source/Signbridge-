@@ -96,8 +96,22 @@ REQUIRED_PERMISSION_USES = {
 }
 
 
-def validate_permission_record(path: Path) -> dict:
-    """Require a scoped, explicit written-rights review before any conversion."""
+def validate_permission_record(path: Path | None = None, *, user_attested: bool = False) -> dict:
+    """Validate written evidence or transparently record the user's approval attestation.
+
+    The attestation path does not fabricate an approver, date, or evidence URL.
+    It records only that the user has confirmed approval for this private family use.
+    """
+    if user_attested:
+        return {
+            "status": "user_attested",
+            "dataset_id": DATASET_ID,
+            "license_id": "CC-BY-NC-SA-4.0",
+            "approved_uses": sorted(REQUIRED_PERMISSION_USES),
+            "authorization_basis": "user_confirmation_in_conversation",
+        }
+    if path is None:
+        raise ValueError("provide --permission-record or explicitly confirm --user-attests-rights")
     try:
         record = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -133,9 +147,10 @@ def validate_permission_record(path: Path) -> dict:
 def convert_dataset(
     root: Path, output_root: Path, train_signers: list[str],
     validation_signers: list[str], test_signers: list[str],
-    permission_record: Path,
+    permission_record: Path | None,
+    user_attested: bool = False,
 ) -> dict:
-    validate_permission_record(permission_record)
+    authorization = validate_permission_record(permission_record, user_attested=user_attested)
     root, output_root = root.resolve(), output_root.resolve()
     metadata_path = root / "metadata.csv"
     if not metadata_path.is_file():
@@ -198,7 +213,8 @@ def convert_dataset(
                 "consent": "yes", "split": split, "source_dataset": DATASET_ID,
                 "source_clip_id": clip_id, "phrase_id": phrase,
                 "license_id": "CC-BY-NC-SA-4.0",
-                "permission_status": "approved",
+                "permission_status": authorization["status"],
+                "authorization_basis": authorization.get("authorization_basis", "written_permission_record"),
                 "source_url": DATASET_URL, "feature_dim": str(FEATURE_DIM),
                 "feature_sha256": digest,
             })
@@ -236,15 +252,18 @@ def main() -> int:
     parser.add_argument("--train-signers", nargs="+", required=True)
     parser.add_argument("--validation-signers", nargs="+", required=True)
     parser.add_argument("--test-signers", nargs="+", required=True)
-    parser.add_argument(
-        "--permission-record", type=Path, required=True,
-        help="path to written permission/rights review record; its presence is not legal validation",
+    authorization_group = parser.add_mutually_exclusive_group(required=True)
+    authorization_group.add_argument("--permission-record", type=Path)
+    authorization_group.add_argument(
+        "--user-attests-rights", action="store_true",
+        help="record the user's explicit approval confirmation without inventing an approver or evidence URL",
     )
     args = parser.parse_args()
     try:
         result = convert_dataset(
             args.dataset_root, args.output_root, args.train_signers,
             args.validation_signers, args.test_signers, args.permission_record,
+            user_attested=args.user_attests_rights,
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
