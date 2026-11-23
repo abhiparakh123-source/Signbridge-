@@ -1,0 +1,48 @@
+name: Audit ASL dataset metadata
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out SIGNBRIDGE
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Fetch only the small public metadata files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/signbridge-asl-audit"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://huggingface.co/datasets/pedroodb/glosl-how2sign/resolve/main/annotations.csv" \
+            --output "$RUNNER_TEMP/signbridge-asl-audit/annotations.csv"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://huggingface.co/datasets/pedroodb/glosl-how2sign/resolve/main/card.json" \
+            --output "$RUNNER_TEMP/signbridge-asl-audit/card.json"
+          test "$(wc -c < "$RUNNER_TEMP/signbridge-asl-audit/annotations.csv")" -le 10000000
+          python -m json.tool "$RUNNER_TEMP/signbridge-asl-audit/card.json" >/dev/null
+
+      - name: Audit annotation rows
+        run: |
+          python services/isl-stream/training/audit_glosl_annotations.py \
+            --annotations "$RUNNER_TEMP/signbridge-asl-audit/annotations.csv" \
+            --output "$RUNNER_TEMP/signbridge-asl-audit/audit-report.json"
+
+      - name: Publish audit report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: signbridge-asl-metadata-audit
+          path: ${{ runner.temp }}/signbridge-asl-audit/audit-report.json
+          if-no-files-found: error
+          retention-days: 7
