@@ -154,3 +154,17 @@ The trainer validates NumPy feature arrays in row chunks (4,096 rows by default)
 ## Training pipeline CI
 
 A separate GitHub Actions workflow, `.github/workflows/training-tests.yml`, installs CPU PyTorch and runs the CTC trainer against temporary synthetic feature arrays. It exercises manifest loading, signer-disjoint split enforcement, consent checks, dataset loading/collation, one optimizer epoch, and evaluation. These fixtures validate software execution only; they are not ASL examples, must not be used as model-quality evidence, and are not committed as training data. The full landmark model and inference path still require approved, expert-reviewed ASL clips and independent signer evaluation.
+
+## Configured checkpoint readiness (not live recognition)
+
+The API can optionally inspect and load one explicitly configured, language-specific research checkpoint:
+
+```bash
+export SIGNBRIDGE_MODEL_CHECKPOINT=/private-models/asl-ctc.pt
+export SIGNBRIDGE_MODEL_LANGUAGE=ASL
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+`SIGNBRIDGE_MODEL_LANGUAGE` defaults to `ASL` and must be `ASL`, `ISL` or `BSL`. The checkpoint language must match exactly. The server never accepts a checkpoint path or language override from a client request. It uses the inference loader's `weights_only=True` checkpoint load and validates the model metadata before retaining the model in memory.
+
+`GET /v1/recognition/status` remains HTTP 503 even when a checkpoint loads successfully. In that case it reports `checkpoint_loaded_streaming_not_integrated`, `model_loaded: true`, and both `recognition_enabled` and `translation_enabled` as false. The camera preprocessing, incremental runtime adapter, calibrated confidence, and sentence translation path are not yet connected. The WebSocket continues to close safely without accepting camera frames or emitting guesses. A checkpoint being loaded is not evidence that it recognises signs accurately.
