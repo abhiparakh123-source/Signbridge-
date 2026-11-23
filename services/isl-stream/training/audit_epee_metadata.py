@@ -105,6 +105,8 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
                         raise ValueError(f"annotation {key} mismatch")
                 if bool(annotation.get("parallel")) != (row["parallel"].lower() == "yes"):
                     raise ValueError("annotation parallel mismatch")
+                if str(annotation.get("hand_slots", "")).strip() != row["hand_slots"].strip():
+                    raise ValueError("annotation hand_slots mismatch")
                 segments = annotation.get("segments")
                 if not isinstance(segments, list) or not segments:
                     raise ValueError("missing gloss segments")
