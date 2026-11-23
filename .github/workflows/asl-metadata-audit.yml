@@ -2,6 +2,10 @@ name: Audit ASL dataset metadata
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/asl-metadata-audit.yml"
+      - "services/isl-stream/training/audit_glosl_annotations.py"
 
 permissions:
   contents: read
