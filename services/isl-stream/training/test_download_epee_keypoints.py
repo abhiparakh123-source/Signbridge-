@@ -52,7 +52,7 @@ class DownloadEpeeKeypointsTests(unittest.TestCase):
                 self.assertEqual(set(kwargs["allow_patterns"]), {
                     "metadata.csv", "annotations/*.json", "keypoints/*.npy"
                 })
-                dataset_root.mkdir(parents=True)
+                dataset_root.mkdir(parents=True, exist_ok=True)
                 (dataset_root / "metadata.csv").write_text("clip_id\n", encoding="utf-8")
                 (dataset_root / "annotations").mkdir()
                 (dataset_root / "keypoints").mkdir()
@@ -86,7 +86,7 @@ class DownloadEpeeKeypointsTests(unittest.TestCase):
             permission = self.permission_file(root)
             dataset_root = root / "dataset"
             def make_dataset(file_count: int, payload_size: int):
-                dataset_root.mkdir()
+                dataset_root.mkdir(parents=True, exist_ok=True)
                 (dataset_root / "metadata.csv").write_text("clip_id\n", encoding="utf-8")
                 (dataset_root / "annotations").mkdir()
                 (dataset_root / "keypoints").mkdir()
