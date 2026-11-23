@@ -17,6 +17,7 @@ def row(**overrides):
         "permission_status": "approved",
         "attribution": "How2Sign project",
         "source_url": "https://how2sign.github.io/",
+        "consent": "yes",
     }
     values.update(overrides)
     return values
