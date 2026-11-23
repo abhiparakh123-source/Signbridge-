@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 REQUIRED = {
     "source_dataset", "source_clip_id", "signer_id", "split",
@@ -74,8 +75,15 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
         # No media is accepted for training until source rights are explicitly reviewed.
         if values["permission_status"].lower() != "approved":
             errors.append(prefix + "source permission_status must be approved before use")
-        if not values["license_id"] or not values["attribution"] or not values["source_url"].startswith(("https://", "http://")):
-            errors.append(prefix + "license, attribution and source URL must be recorded")
+        parsed_url = urlsplit(values["source_url"])
+        if (
+            not values["license_id"]
+            or not values["attribution"]
+            or parsed_url.scheme not in {"http", "https"}
+            or not parsed_url.netloc
+            or any(char.isspace() for char in values["source_url"])
+        ):
+            errors.append(prefix + "license, attribution and a valid HTTP(S) source URL must be recorded")
 
         # Count each row independently; earlier invalid rows must not affect later rows.
         if len(errors) == errors_before_row:
