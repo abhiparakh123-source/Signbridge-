@@ -146,3 +146,7 @@ In particular, English translations are not relabeled as ASL gloss. See
 ## Landmark feature provenance
 
 The extractor carries optional source metadata into the generated feature manifest: source dataset and clip IDs, original media-relative path, segment timestamps when supplied, license ID, attribution, source URL, and a SHA-256 digest of the generated feature array. Family-only manifests without corpus provenance fields remain supported; missing optional fields are left blank, and the source clip ID falls back to the family clip ID. The digest identifies the exact extracted feature file, not the authenticity or legal status of the source video. Keep manifests and feature arrays in private storage.
+
+## Memory-bounded feature validation
+
+The trainer validates NumPy feature arrays in row chunks (4,096 rows by default), including memory-mapped arrays during preflight. This avoids allocating a full-array boolean mask merely to check for NaN or infinity. It does not make model training itself constant-memory: batches still load their selected sequences, and long clips or large batches may require reducing batch size or preprocessing clip lengths.
