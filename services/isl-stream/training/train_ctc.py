@@ -51,8 +51,8 @@ def load_manifest(path: Path, root: Path, language: str):
             raise ValueError(f"clip {clip_id} has no explicit consent")
         # Corpora with an explicit rights-review field must be approved.
         permission_status = row.get("permission_status", "").strip().lower()
-        if permission_status and permission_status != "approved":
-            raise ValueError(f"clip {clip_id} source permission is not approved")
+        if permission_status and permission_status not in {"approved", "user_attested"}:
+            raise ValueError(f"clip {clip_id} source permission is not approved or user-attested")
         row_language = row["sign_language"].strip().upper()
         if row_language not in {"ISL", "ASL", "BSL"}:
             raise ValueError(f"invalid sign language for clip {clip_id}")
