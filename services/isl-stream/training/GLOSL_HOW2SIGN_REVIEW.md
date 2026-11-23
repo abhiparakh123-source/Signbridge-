@@ -10,6 +10,14 @@ The dataset page describes 34,305 ASL-to-English samples (61.15 hours), with 30,
 
 Treat these as source-reported facts, not an independent rights determination. Review the current `card.json`, source dataset terms, upstream How2Sign terms, and attribution requirements before any use. Do not assume the repackager can grant rights it did not receive. The official How2Sign site describes access as research-only and says the material may not be used commercially; its paper reports IRB-approved collection and participant consent for making recordings publicly available for research. That is useful provenance, but it is not blanket proof that every repackaged file, derived feature, trained checkpoint, or intended app deployment is authorized. A private family app is not automatically covered merely because it is non-commercial: confirm the scope of the original and repackaging terms for this exact use before training.
 
+## Metadata and gloss-semantics review (23 Nov 2026)
+
+The currently published GloSL README confirms that the CSV schema contains separate `text`, `gloss`, and `gloss_type` columns, and describes the corpus as ASL-to-English with 34,305 sentence samples. However, the README does **not** define the allowed `gloss_type` values, explain their meanings, or state row-level counts by type. The public dataset page also describes the split as imported How2Sign video-disjoint splits; that is not evidence of signer-disjoint splits.
+
+The upstream How2Sign materials describe gloss as a linguistic annotation: ASL linguists annotated signs in ELAN, using capitalized English gloss tokens as approximate labels for ASL signs. A gloss is explicitly not an English translation. This makes the upstream corpus a plausible *candidate* for continuous ASL gloss research, but it does not prove that GloSL's `gloss` column is a faithful export of that tier or that every row has the same annotation type.
+
+**Result of this review:** the schema is promising, but label suitability is **not yet established**. Do not train on the `gloss` column until the actual CSV's `gloss_type` distribution, sample labels, row quality, and `card.json` transformation/provenance details have been inspected. No annotation CSV or media corpus was downloaded as part of this review, so no row-level statistics are claimed.
+
 ## Local annotation inventory
 
 Do not clone or download the full video/pose corpus just to inspect its metadata. Obtain only the annotation CSV and provenance files through an allowed route, then run:
