@@ -19,6 +19,10 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from model import LandmarkCTCModel
+try:
+    from .feature_validation import validate_feature_array
+except ImportError:
+    from feature_validation import validate_feature_array
 
 
 def load_manifest(path: Path, root: Path, language: str):
@@ -79,8 +83,10 @@ class LandmarkDataset(Dataset):
     def __getitem__(self, index):
         row = self.rows[index]
         values = np.load(row["_path"], allow_pickle=False)
-        if values.ndim != 2 or values.shape[0] < 1 or not np.isfinite(values).all():
-            raise ValueError(f"invalid feature array for clip {row['clip_id']}")
+        try:
+            validate_feature_array(values)
+        except ValueError as exc:
+            raise ValueError(f"invalid feature array for clip {row['clip_id']}: {exc}") from exc
         gloss_tokens = row["_gloss"].split()
         if not gloss_tokens:
             raise ValueError(f"empty token sequence for clip {row['clip_id']}")
@@ -233,11 +239,11 @@ def main():
     # corrupt arrays and shape mismatches before a DataLoader fails mid-run.
     for row in rows:
         array = np.load(row["_path"], mmap_mode="r", allow_pickle=False)
-        if array.ndim != 2 or array.shape[0] < 1 or array.shape[1] < 1:
-            raise ValueError(f"invalid feature shape for clip {row['clip_id']}")
-        if not np.isfinite(array).all():
-            raise ValueError(f"non-finite feature values in clip {row['clip_id']}")
-        feature_dim = feature_dim or int(array.shape[1])
+        try:
+            _, array_feature_dim = validate_feature_array(array)
+        except ValueError as exc:
+            raise ValueError(f"invalid feature array for clip {row['clip_id']}: {exc}") from exc
+        feature_dim = feature_dim or array_feature_dim
         if int(array.shape[1]) != feature_dim:
             raise ValueError(f"feature dimensions differ across splits (clip {row['clip_id']})")
         tokens = row["_gloss"].split()
