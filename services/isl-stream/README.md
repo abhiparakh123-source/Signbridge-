@@ -150,3 +150,7 @@ The extractor carries optional source metadata into the generated feature manife
 ## Memory-bounded feature validation
 
 The trainer validates NumPy feature arrays in row chunks (4,096 rows by default), including memory-mapped arrays during preflight. This avoids allocating a full-array boolean mask merely to check for NaN or infinity. It does not make model training itself constant-memory: batches still load their selected sequences, and long clips or large batches may require reducing batch size or preprocessing clip lengths.
+
+## Training pipeline CI
+
+A separate GitHub Actions workflow, `.github/workflows/training-tests.yml`, installs CPU PyTorch and runs the CTC trainer against temporary synthetic feature arrays. It exercises manifest loading, signer-disjoint split enforcement, consent checks, dataset loading/collation, one optimizer epoch, and evaluation. These fixtures validate software execution only; they are not ASL examples, must not be used as model-quality evidence, and are not committed as training data. The full landmark model and inference path still require approved, expert-reviewed ASL clips and independent signer evaluation.
