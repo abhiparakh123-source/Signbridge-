@@ -7,7 +7,7 @@ from training.audit_glosl_annotations import audit_annotations
 
 
 class AuditGloslAnnotationsTests(unittest.TestCase):
-    def test_reports_gloss_types_and_split_leakage_without_approving_training(self):
+    def test_reports_gloss_types_and_signer_video_split_leakage(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "annotations.csv"
             fields = ["id", "split", "text", "gloss", "gloss_type", "signer", "video_ref"]
@@ -15,17 +15,36 @@ class AuditGloslAnnotationsTests(unittest.TestCase):
                 ["a", "train", "hello", "HELLO", "manual", "signer-1", "video-a"],
                 ["b", "test", "hello", "HELLO", "manual", "signer-1", "video-b"],
                 ["c", "dev", "thanks", "", "", "signer-2", "video-c"],
+                ["d", "test", "please", "PLEASE", "manual", "signer-3", "video-a"],
             ]
             with path.open("w", newline="", encoding="utf-8") as handle:
                 writer = csv.writer(handle)
                 writer.writerow(fields)
                 writer.writerows(rows)
             report = audit_annotations(path)
-            self.assertEqual(report["rows"], 3)
-            self.assertEqual(report["gloss_type_counts"]["manual"], 2)
+            self.assertEqual(report["rows"], 4)
+            self.assertEqual(report["gloss_type_counts"]["manual"], 3)
             self.assertEqual(report["empty_gloss_rows"], 1)
             self.assertEqual(report["signers_in_multiple_splits"], 1)
+            self.assertEqual(report["videos_in_multiple_splits"], 1)
             self.assertFalse(report["training_approved"])
+
+    def test_reports_duplicate_ids_and_invalid_splits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "annotations.csv"
+            fields = ["id", "split", "text", "gloss", "gloss_type", "signer"]
+            rows = [
+                ["same", "train", "hello", "HELLO", "manual", "signer-1"],
+                ["same", "holdout", "hello", "HELLO", "manual", "signer-2"],
+            ]
+            with path.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                writer.writerow(fields)
+                writer.writerows(rows)
+            report = audit_annotations(path)
+            self.assertEqual(report["duplicate_ids"], 1)
+            self.assertEqual(report["invalid_split_rows"], 1)
+            self.assertEqual(report["split_counts"]["holdout"], 1)
 
     def test_rejects_missing_required_columns(self):
         with tempfile.TemporaryDirectory() as directory:
