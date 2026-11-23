@@ -45,12 +45,22 @@ def split_signers(train: list[str], validation: list[str], test: list[str]) -> d
     return owners
 
 
-def read_annotations(path: Path, clip_id: str, signer_id: str, n_frames: int, fps: float) -> str:
+def read_annotations(path: Path, row: dict[str, str], n_frames: int, fps: float) -> str:
     payload = json.loads(path.read_text(encoding="utf-8"))
+    clip_id, signer_id = row["clip_id"].strip(), row["signer_id"].strip()
     if payload.get("clip_id") != clip_id or payload.get("signer_id") != signer_id:
         raise ValueError(f"{clip_id}: annotation identity does not match metadata")
     if payload.get("sign_language") != "ASL":
         raise ValueError(f"{clip_id}: annotation is not explicitly ASL")
+    if str(payload.get("phrase_id")) != str(row["phrase_id"]).strip():
+        raise ValueError(f"{clip_id}: phrase_id differs between metadata and annotation")
+    if int(payload.get("n_frames", -1)) != n_frames or not np.isclose(float(payload.get("fps", 0)), fps):
+        raise ValueError(f"{clip_id}: frame count or FPS differs between metadata and annotation")
+    if str(payload.get("text_en", "")).strip() != row["text_en"].strip():
+        raise ValueError(f"{clip_id}: English prompt differs between metadata and annotation")
+    parallel_value = str(row["parallel"]).strip().lower()
+    if parallel_value not in {"yes", "no"} or bool(payload.get("parallel")) != (parallel_value == "yes"):
+        raise ValueError(f"{clip_id}: parallel flag differs or is invalid")
     segments = payload.get("segments")
     if not isinstance(segments, list) or not segments:
         raise ValueError(f"{clip_id}: no gloss segments")
@@ -71,7 +81,11 @@ def read_annotations(path: Path, clip_id: str, signer_id: str, n_frames: int, fp
             raise ValueError(f"{clip_id}: gloss segments are not ordered by start time")
         previous_start = start
         glosses.append(gloss)
-    return " ".join(glosses)
+    annotation_gloss = " ".join(glosses)
+    metadata_gloss = " ".join(clean_gloss(row["gloss_sequence"].replace("|", " ")).split())
+    if annotation_gloss != metadata_gloss:
+        raise ValueError(f"{clip_id}: gloss_sequence differs between metadata and annotation")
+    return annotation_gloss
 
 
 def convert_dataset(
@@ -85,7 +99,7 @@ def convert_dataset(
     owner = split_signers(train_signers, validation_signers, test_signers)
     with metadata_path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
-        required = {"clip_id", "signer_id", "phrase_id", "fps", "n_frames", "hand_slots"}
+        required = {"clip_id", "signer_id", "phrase_id", "fps", "n_frames", "hand_slots", "parallel", "text_en", "gloss_sequence"}
         missing = required - set(reader.fieldnames or [])
         if missing:
             raise ValueError("metadata.csv missing columns: " + ", ".join(sorted(missing)))
@@ -122,7 +136,7 @@ def convert_dataset(
             keypoint_path = root / "keypoints" / f"{clip_id}.npy"
             if not annotation_path.is_file() or not keypoint_path.is_file():
                 raise ValueError("annotation JSON or keypoint NPY is missing")
-            gloss = read_annotations(annotation_path, clip_id, signer, n_frames, fps)
+            gloss = read_annotations(annotation_path, row, n_frames, fps)
             values = np.load(keypoint_path, mmap_mode="r", allow_pickle=False)
             if values.shape != (n_frames, 128, 3):
                 raise ValueError(f"expected ({n_frames}, 128, 3), received {values.shape}")
