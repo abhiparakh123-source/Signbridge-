@@ -17,6 +17,7 @@ def row(**overrides):
         "permission_status": "approved",
         "attribution": "How2Sign project",
         "source_url": "https://how2sign.github.io/",
+        "consent": "yes",
     }
     values.update(overrides)
     return values
@@ -32,6 +33,13 @@ class AslCorpusManifestTests(unittest.TestCase):
 
     def test_unapproved_source_is_rejected(self):
         self.assertTrue(any("permission_status" in e for e in validate_rows([row(permission_status="pending")])))
+
+
+    def test_missing_or_unapproved_signer_consent_is_rejected(self):
+        for consent in ("", "pending", "no"):
+            with self.subTest(consent=consent):
+                errors = validate_rows([row(consent=consent)])
+                self.assertTrue(any("explicit signer consent" in error for error in errors))
 
     def test_invalid_time_range_is_rejected(self):
         self.assertTrue(any("start_ms/end_ms" in e for e in validate_rows([row(start_ms="5000", end_ms="1000")])))
