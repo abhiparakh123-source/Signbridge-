@@ -25,9 +25,10 @@ def download_keypoints(
     permission_record: Path,
     max_bytes: int = DEFAULT_MAX_BYTES,
     revision: str = "main",
+    user_attested: bool = False,
 ) -> dict:
-    # Validate the documented rights record before any network download.
-    validate_permission_record(permission_record)
+    # Validate written evidence or record the user's explicit approval attestation.
+    authorization = validate_permission_record(permission_record, user_attested=user_attested)
     if max_bytes <= 0:
         raise ValueError("max_bytes must be positive")
     destination = destination.resolve()
@@ -78,6 +79,7 @@ def download_keypoints(
         "keypoint_gib": round(total_bytes / (1024 ** 3), 3),
         "downloaded_patterns": ["metadata.csv", "annotations/*.json", "keypoints/*.npy"],
         "videos_downloaded": False,
+        "authorization_basis": authorization.get("authorization_basis", "written_permission_record"),
         "warning": "Dataset payload downloaded only; conversion, model training and deployment are separate steps.",
     }
 
@@ -85,13 +87,19 @@ def download_keypoints(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--destination", type=Path, required=True)
-    parser.add_argument("--permission-record", type=Path, required=True)
+    authorization_group = parser.add_mutually_exclusive_group(required=True)
+    authorization_group.add_argument("--permission-record", type=Path)
+    authorization_group.add_argument(
+        "--user-attests-rights", action="store_true",
+        help="record the user's explicit approval confirmation without fabricating written evidence",
+    )
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
     parser.add_argument("--revision", default="main")
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     report = download_keypoints(
-        args.destination, args.permission_record, args.max_bytes, args.revision
+        args.destination, args.permission_record, args.max_bytes, args.revision,
+        user_attested=args.user_attests_rights,
     )
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2), encoding="utf-8")
