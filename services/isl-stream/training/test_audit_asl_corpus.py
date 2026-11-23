@@ -40,9 +40,11 @@ class AuditAslCorpusTests(unittest.TestCase):
         self.assertEqual(report["clip_duration_ms"]["median"], 2500)
 
     def test_invalid_manifest_returns_validation_errors(self):
-        report = audit_rows([row("a", "signer-a", "train")])
+        invalid = row("a", "signer-a", "train")
+        invalid["permission_status"] = "pending"
+        report = audit_rows([invalid])
         self.assertFalse(report["ok"])
-        self.assertTrue(any("train, validation, and test" in e for e in report["errors"]))
+        self.assertTrue(any("permission_status must be approved" in e for e in report["errors"]))
 
 
 if __name__ == "__main__":
