@@ -27,7 +27,11 @@ class AuditGloslAnnotationsTests(unittest.TestCase):
             self.assertEqual(report["empty_gloss_rows"], 1)
             self.assertEqual(report["signers_in_multiple_splits"], 1)
             self.assertEqual(report["videos_in_multiple_splits"], 1)
-            self.assertEqual(report["invalid_timestamp_rows"], 2)\n            self.assertEqual(report["invalid_fps_rows"], 1)\n            self.assertEqual(report["invalid_frame_count_rows"], 1)\n            self.assertEqual(report["missing_video_ref_rows"], 0)\n            self.assertFalse(report["training_approved"])
+            self.assertEqual(report["invalid_timestamp_rows"], 2)
+            self.assertEqual(report["invalid_fps_rows"], 1)
+            self.assertEqual(report["invalid_frame_count_rows"], 1)
+            self.assertEqual(report["missing_video_ref_rows"], 0)
+            self.assertFalse(report["training_approved"])
 
     def test_reports_duplicate_ids_and_invalid_splits(self):
         with tempfile.TemporaryDirectory() as directory:
