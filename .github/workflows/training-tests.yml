@@ -8,7 +8,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "services/isl-stream/training/**"
+      - "services/isl-stream/**"
       - ".github/workflows/training-tests.yml"
 jobs:
   training-tests:
