@@ -99,7 +99,7 @@ def frame_window(source_fps: float, start_ms: int = 0, end_ms: int | None = None
         raise ValueError("source_fps must be finite and positive")
     if start_ms < 0 or (end_ms is not None and end_ms <= start_ms):
         raise ValueError("clip timestamps must satisfy 0 <= start_ms < end_ms")
-    start_frame = int(math.floor(start_ms * source_fps / 1000.0))
+    start_frame = int(math.ceil(start_ms * source_fps / 1000.0))
     end_frame = None if end_ms is None else int(math.ceil(end_ms * source_fps / 1000.0))
     if end_frame is not None and end_frame <= start_frame:
         raise ValueError("clip timestamp interval is shorter than one source frame")
@@ -120,6 +120,9 @@ def extract_video(
         raise ValueError(f"cannot open video: {video_path}")
     source_fps = capture.get(cv2.CAP_PROP_FPS)
     if not source_fps or source_fps <= 0:
+        if start_ms or end_ms is not None:
+            capture.release()
+            raise ValueError("source video FPS is unavailable; cannot apply timestamp clip bounds safely")
         source_fps = max_fps
     stride = sampling_stride(float(source_fps), max_fps)
     try:
@@ -127,8 +130,9 @@ def extract_video(
     except ValueError:
         capture.release()
         raise
-    if start_frame:
-        capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    if start_frame and not capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame):
+        capture.release()
+        raise ValueError(f"cannot seek to requested clip start frame {start_frame}: {video_path}")
     frames = []
     frame_index = start_frame
     try:
