@@ -127,7 +127,7 @@ def build_plan(metadata_path: Path) -> dict:
             "Signer-disjoint, but not phrase-disjoint: the parallel phrase grid intentionally overlaps across splits.",
             "Validation and test each contain only one parallel-grid signer; held-out signer estimates will have high uncertainty.",
             "The ECHO-only parallel phrases are test-only zero-shot items; report them separately.",
-            "Phrase IDs absent from a held-out signer must not be treated as recognition failures for that signer."
+            "Phrase IDs absent from a held-out signer must not be treated as recognition failures for that signer.",
             "Dataset license and written permission must be cleared before training or retaining derived model artifacts.",
         ],
     }
