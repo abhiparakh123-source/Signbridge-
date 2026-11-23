@@ -5,6 +5,7 @@ import numpy as np
 
 from training.extract_landmarks import (
     FEATURE_DIM,
+    build_feature_manifest_row,
     pack_landmarks,
     safe_clip_filename,
     sampling_stride,
@@ -40,6 +41,52 @@ class ExtractorSplitValidationTests(unittest.TestCase):
     def test_rejects_invalid_split(self):
         with self.assertRaisesRegex(ValueError, "split must be"):
             validate_signer_splits([{"signer_id": "s1", "split": "holdout"}])
+
+
+class ExtractorProvenanceTests(unittest.TestCase):
+    def test_feature_manifest_preserves_asl_source_provenance_and_hash(self):
+        source = {
+            "clip_id": "corpus__clip-1",
+            "signer_id": "signer-1",
+            "sign_language": "asl",
+            "label": "HELLO WORLD",
+            "consent": "yes",
+            "split": "validation",
+            "video_path": "clips/clip-1.mp4",
+            "source_dataset": "How2Sign",
+            "source_clip_id": "clip-1",
+            "start_ms": "1200",
+            "end_ms": "2400",
+            "license_id": "CC-BY-NC-4.0",
+            "attribution": "Dataset authors",
+            "source_url": "https://example.org/source",
+        }
+        result = build_feature_manifest_row(
+            source, __import__("pathlib").Path("features/clip-1.npy"),
+            {"sha256": "abc123"},
+        )
+        self.assertEqual(result["sign_language"], "ASL")
+        self.assertEqual(result["source_dataset"], "How2Sign")
+        self.assertEqual(result["source_clip_id"], "clip-1")
+        self.assertEqual(result["start_ms"], "1200")
+        self.assertEqual(result["end_ms"], "2400")
+        self.assertEqual(result["license_id"], "CC-BY-NC-4.0")
+        self.assertEqual(result["source_url"], "https://example.org/source")
+        self.assertEqual(result["feature_sha256"], "abc123")
+
+    def test_family_manifest_without_source_fields_gets_safe_defaults(self):
+        source = {
+            "clip_id": "family-clip", "signer_id": "family-signer",
+            "sign_language": "ASL", "label": "HELLO", "consent": "yes",
+            "split": "train", "video_path": "clips/family.mp4",
+        }
+        result = build_feature_manifest_row(
+            source, __import__("pathlib").Path("features/family.npy"),
+            {"sha256": "def456"},
+        )
+        self.assertEqual(result["source_clip_id"], "family-clip")
+        self.assertEqual(result["license_id"], "")
+        self.assertEqual(result["feature_sha256"], "def456")
 
 
 class ExtractorPrimitiveTests(unittest.TestCase):
