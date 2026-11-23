@@ -93,7 +93,23 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
-def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
+def frame_window(source_fps: float, start_ms: int = 0, end_ms: int | None = None) -> tuple[int, int | None]:
+    """Convert a source clip's millisecond interval to a half-open frame range."""
+    if not np.isfinite(source_fps) or source_fps <= 0:
+        raise ValueError("source_fps must be finite and positive")
+    if start_ms < 0 or (end_ms is not None and end_ms <= start_ms):
+        raise ValueError("clip timestamps must satisfy 0 <= start_ms < end_ms")
+    start_frame = int(math.floor(start_ms * source_fps / 1000.0))
+    end_frame = None if end_ms is None else int(math.ceil(end_ms * source_fps / 1000.0))
+    if end_frame is not None and end_frame <= start_frame:
+        raise ValueError("clip timestamp interval is shorter than one source frame")
+    return start_frame, end_frame
+
+
+def extract_video(
+    video_path: Path, output_path: Path, max_fps: float,
+    start_ms: int = 0, end_ms: int | None = None,
+) -> dict:
     # Heavy video dependencies are imported only for actual extraction so the
     # feature-vector unit tests can run with NumPy alone.
     import cv2
@@ -106,8 +122,15 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
     if not source_fps or source_fps <= 0:
         source_fps = max_fps
     stride = sampling_stride(float(source_fps), max_fps)
+    try:
+        start_frame, end_frame = frame_window(float(source_fps), start_ms, end_ms)
+    except ValueError:
+        capture.release()
+        raise
+    if start_frame:
+        capture.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     frames = []
-    frame_index = 0
+    frame_index = start_frame
     try:
         with mp.solutions.holistic.Holistic(
             static_image_mode=False,
@@ -120,9 +143,9 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
         ) as holistic:
             while True:
                 ok, frame = capture.read()
-                if not ok:
+                if not ok or (end_frame is not None and frame_index >= end_frame):
                     break
-                if frame_index % stride == 0:
+                if (frame_index - start_frame) % stride == 0:
                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     rgb.flags.writeable = False
                     result = holistic.process(rgb)
@@ -259,7 +282,9 @@ def main() -> int:
         feature_rel = Path("features") / f"{safe_id}.npy"
         feature_path = root / feature_rel
         try:
-            stats = extract_video(video_path, feature_path, args.max_fps)
+            start_ms = int(row["start_ms"]) if (row.get("start_ms") or "").strip() else 0
+            end_ms = int(row["end_ms"]) if (row.get("end_ms") or "").strip() else None
+            stats = extract_video(video_path, feature_path, args.max_fps, start_ms, end_ms)
             output_rows.append(build_feature_manifest_row(row, feature_rel, stats))
             print(json.dumps({"clip_id": clip_id, **stats}))
         except Exception as exc:
