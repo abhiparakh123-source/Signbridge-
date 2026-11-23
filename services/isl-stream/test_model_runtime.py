@@ -3,7 +3,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import torch
+try:
+    import torch
+except ImportError:
+    raise unittest.SkipTest("PyTorch runtime tests run in the dedicated training CI")
 
 from model_runtime import ModelRuntime
 from training.model import LandmarkCTCModel
