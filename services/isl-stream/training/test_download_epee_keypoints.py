@@ -46,6 +46,7 @@ class DownloadEpeeKeypointsTests(unittest.TestCase):
             root = Path(directory)
             permission = self.permission_file(root)
             dataset_root = root / "dataset"
+
             def fake_snapshot_download(**kwargs):
                 self.assertEqual(kwargs["repo_id"], "CLERC-DATA/epee")
                 self.assertEqual(kwargs["repo_type"], "dataset")
@@ -69,7 +70,7 @@ class DownloadEpeeKeypointsTests(unittest.TestCase):
             with patch.object(downloader, "snapshot_download", side_effect=fake_snapshot_download) as snapshot, \
                  patch.object(downloader, "HfApi", return_value=FakeApi()):
                 report = downloader.download_keypoints(
-                    dataset_root, permission, max_bytes=1024, revision="test-revision"
+                    dataset_root, permission, max_bytes=20_000, revision="test-revision"
                 )
 
             self.assertEqual(snapshot.call_count, 1)
@@ -85,6 +86,7 @@ class DownloadEpeeKeypointsTests(unittest.TestCase):
             root = Path(directory)
             permission = self.permission_file(root)
             dataset_root = root / "dataset"
+
             def make_dataset(file_count: int, payload_size: int):
                 dataset_root.mkdir(parents=True, exist_ok=True)
                 (dataset_root / "metadata.csv").write_text("clip_id\n", encoding="utf-8")
