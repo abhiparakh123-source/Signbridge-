@@ -15,7 +15,7 @@ REQUIRED = {
     "source_dataset", "source_clip_id", "signer_id", "split",
     "start_ms", "end_ms", "transcript", "transcript_kind",
     "modality", "license_id", "permission_status", "attribution",
-    "source_url",
+    "source_url", "consent",
 }
 SPLITS = {"train", "validation", "test"}
 TRANSCRIPT_KINDS = {"translation", "gloss"}
@@ -72,9 +72,11 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
         if modality not in MODALITIES:
             errors.append(prefix + "unsupported modality declaration")
 
-        # No media is accepted for training until source rights are explicitly reviewed.
+        # A public URL is not a substitute for explicit signer consent.
         if values["permission_status"].lower() != "approved":
             errors.append(prefix + "source permission_status must be approved before use")
+        if values["consent"].lower() not in {"yes", "true", "1"}:
+            errors.append(prefix + "explicit signer consent must be yes before use")
         parsed_url = urlsplit(values["source_url"])
         if (
             not values["license_id"]
