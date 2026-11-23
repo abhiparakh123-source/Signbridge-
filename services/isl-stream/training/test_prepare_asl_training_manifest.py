@@ -42,6 +42,20 @@ class PrepareAslManifestTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "must not be relabeled"):
                 convert_rows([row(kind="translation")], root)
 
+    def test_refuses_empty_gloss_and_invalid_source_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "clips").mkdir()
+            (root / "clips/a.mp4").write_bytes(b"video")
+            item = row()
+            item["transcript"] = " "
+            with self.assertRaisesRegex(ValueError, "must not be empty"):
+                convert_rows([item], root)
+            item = row()
+            item["source_url"] = "not-a-url"
+            with self.assertRaisesRegex(ValueError, "HTTP"):
+                convert_rows([item], root)
+
     def test_refuses_unapproved_permission(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
