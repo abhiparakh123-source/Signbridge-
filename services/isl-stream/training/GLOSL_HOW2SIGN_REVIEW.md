@@ -69,3 +69,19 @@ If signer overlap exists, do not silently accept it: create a genuinely signer-d
 ## Current decision
 
 **Do not download the 85 GB corpus or start training yet.** First inspect the small annotation/provenance files and obtain the required permissions. In particular, confirm whether the upstream research-only grant and the GloSL repackaging terms permit this specific private application use and retention of derived features/checkpoints. This review note does not certify legal rights, signer consent, gloss quality, or model readiness.
+
+
+## Machine-readable GloSL card inspection (23 Nov 2026)
+
+The public Hugging Face `card.json` was inspected directly (revision shown on the file page: `d714db7`). It confirms:
+
+- `annotation_types` is an empty array, and `modalities` lists pose, text, and video — **not gloss**. This is a material warning: the README's generic CSV schema includes a `gloss`/`gloss_type` column, but the machine-readable card does not declare gloss as an annotation type. Do not assume the column contains human-annotated gloss labels.
+- `signers` is null, so the card supplies no signer count.
+- The split policy is explicitly imported How2Sign official train/validation/test and **video-disjoint**; signer-disjointness is not established.
+- The provenance reports 34,305 clips and 133 clips missing video.
+- The card says source RGB clips are not rehosted and should be obtained from How2Sign; its `video.hosted` field is true while the note says not rehosted. Treat this internal inconsistency as unresolved metadata, not as evidence that video is available or authorized.
+- The card's access block asserts public visibility, CC BY-NC 4.0, redistributable=true, and reupload_ok=public-nc. These are repackager-provided assertions, not independent proof that upstream How2Sign grants every downstream use, nor proof of participant consent for this application's training and checkpoint retention.
+
+The CSV's 6.8 MB file page confirms the file exists but its contents are too large for the page renderer. **No row-level CSV values or gloss_type counts were inspected.** The card's empty `annotation_types` makes the next step more cautious: retrieve and sample the actual CSV before deciding whether it is usable at all.
+
+Updated decision: **not approved; gloss supervision is currently unsubstantiated by the machine-readable card.** Do not train or prepare a training manifest from this dataset on the strength of the README schema alone.
