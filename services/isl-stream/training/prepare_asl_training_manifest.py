@@ -10,6 +10,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 REQUIRED = {
     "source_dataset", "source_clip_id", "signer_id", "split",
@@ -38,8 +39,14 @@ def convert_rows(rows: list[dict[str, str]], data_root: Path) -> list[dict[str, 
             )
         if not row["transcript"].strip():
             raise ValueError(f"line {line}: reviewed gloss transcript must not be empty")
-        if not row["source_url"].strip().startswith(("https://", "http://")):
-            raise ValueError(f"line {line}: source_url must be an HTTP(S) URL")
+        source_url = row["source_url"].strip()
+        parsed_url = urlsplit(source_url)
+        if (
+            parsed_url.scheme not in {"http", "https"}
+            or not parsed_url.netloc
+            or any(char.isspace() for char in source_url)
+        ):
+            raise ValueError(f"line {line}: source_url must be a valid HTTP(S) URL")
         if row["permission_status"].strip().lower() != "approved":
             raise ValueError(f"line {line}: source permission is not approved")
         if row["consent"].strip().lower() not in {"yes", "true", "1"}:
