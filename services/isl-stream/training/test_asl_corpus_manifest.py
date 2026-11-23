@@ -48,6 +48,12 @@ class AslCorpusManifestTests(unittest.TestCase):
     def test_empty_manifest_is_rejected(self):
         self.assertTrue(validate_rows([]))
 
+    def test_malformed_source_urls_are_rejected(self):
+        for source_url in ("not-a-url", "https://", "https://bad host/path"):
+            with self.subTest(source_url=source_url):
+                errors = validate_rows([row(source_url=source_url)])
+                self.assertTrue(any("valid HTTP(S)" in error for error in errors))
+
     def test_valid_rows_after_invalid_rows_are_counted(self):
         errors = validate_rows([row(permission_status="pending"), row(source_clip_id="valid-after-invalid")])
         self.assertTrue(any("permission_status" in error for error in errors))
