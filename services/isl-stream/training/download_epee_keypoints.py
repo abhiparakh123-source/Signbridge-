@@ -22,7 +22,7 @@ DEFAULT_MAX_BYTES = 1024 ** 3
 
 def download_keypoints(
     destination: Path,
-    permission_record: Path,
+    permission_record: Path | None,
     max_bytes: int = DEFAULT_MAX_BYTES,
     revision: str = "main",
     user_attested: bool = False,
