@@ -79,6 +79,20 @@ def pack_landmarks(results) -> np.ndarray:
     return vector
 
 
+def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    """Hash a potentially large feature file without loading it all into memory."""
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be positive")
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            block = handle.read(chunk_size)
+            if not block:
+                break
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
     # Heavy video dependencies are imported only for actual extraction so the
     # feature-vector unit tests can run with NumPy alone.
@@ -128,7 +142,7 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
         "feature_dim": int(sequence.shape[1]),
         "source_fps": float(source_fps),
         "sampled_fps_approx": float(source_fps / stride),
-        "sha256": hashlib.sha256(output_path.read_bytes()).hexdigest(),
+        "sha256": sha256_file(output_path),
     }
 
 
