@@ -28,6 +28,22 @@ class How2SignAuditTests(unittest.TestCase):
             self.assertTrue(report["has_signer_column"])
             self.assertFalse(report["training_approved"])
 
+
+    def test_gloss_table_with_duplicate_ids_or_missing_signers_is_not_candidate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "incomplete.csv"
+            path.write_text(
+                "id,split,signer,gloss\\n"
+                "clip-1,train,s1,HELLO\\n"
+                "clip-1,test,,THANK-YOU\\n",
+                encoding="utf-8",
+            )
+            report = inspect_table(path)
+            self.assertFalse(report["candidate_for_manual_review"])
+            self.assertEqual(report["duplicate_clip_ids"], 1)
+            self.assertEqual(report["missing_signer_rows"], 1)
+            self.assertEqual(report["missing_or_invalid_split_rows"], 0)
+
     def test_release_inventory_counts_videos_and_tables(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
