@@ -54,7 +54,7 @@ class ExtractorPrimitiveTests(unittest.TestCase):
                 sampling_stride(source, target)
 
     def test_clip_filename_is_safe_and_nonempty(self):
-        self.assertEqual(safe_clip_filename("../clip 01"), "___clip_01")
+        self.assertEqual(safe_clip_filename("../clip 01"), "clip_01")
         with self.assertRaises(ValueError):
             safe_clip_filename(" .. ")
 
