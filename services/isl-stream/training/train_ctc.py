@@ -18,10 +18,11 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
-from model import LandmarkCTCModel
 try:
+    from .model import LandmarkCTCModel
     from .feature_validation import validate_feature_array
-except ImportError:
+except ImportError:  # Direct script execution from the training directory.
+    from model import LandmarkCTCModel
     from feature_validation import validate_feature_array
 
 
