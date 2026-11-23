@@ -18,6 +18,7 @@ def row(clip, signer, split):
         "permission_status": "approved",
         "attribution": "Dataset authors",
         "source_url": "https://example.org/corpus",
+        "consent": "yes",
     }
 
 
