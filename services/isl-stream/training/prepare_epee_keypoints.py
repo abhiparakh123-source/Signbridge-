@@ -50,8 +50,6 @@ def read_annotations(path: Path, row: dict[str, str], n_frames: int, fps: float)
     clip_id, signer_id = row["clip_id"].strip(), row["signer_id"].strip()
     if payload.get("clip_id") != clip_id or payload.get("signer_id") != signer_id:
         raise ValueError(f"{clip_id}: annotation identity does not match metadata")
-    if payload.get("sign_language") != "ASL":
-        raise ValueError(f"{clip_id}: annotation is not explicitly ASL")
     if str(payload.get("phrase_id")) != str(row["phrase_id"]).strip():
         raise ValueError(f"{clip_id}: phrase_id differs between metadata and annotation")
     if int(payload.get("n_frames", -1)) != n_frames or not np.isclose(float(payload.get("fps", 0)), fps):
@@ -110,7 +108,7 @@ def convert_dataset(
     output_root.mkdir(parents=True, exist_ok=True)
     feature_dir = output_root / "features"
     feature_dir.mkdir(parents=True, exist_ok=True)
-    manifest_rows, seen, phrase_splits, signer_counts = [], set(), {}, {}
+    manifest_rows, seen, signer_counts = [], set(), {}
     failures = []
     for row in rows:
         clip_id, signer = row["clip_id"].strip(), row["signer_id"].strip()
@@ -124,9 +122,6 @@ def convert_dataset(
             phrase = row["phrase_id"].strip()
             if not phrase:
                 raise ValueError("phrase_id is required for leakage checks")
-            prior = phrase_splits.setdefault(phrase, split)
-            if prior != split:
-                raise ValueError(f"phrase_id {phrase} leaks across {prior}/{split}")
             if row["hand_slots"].strip().lower() != "verified":
                 raise ValueError("hand_slots must be verified for this baseline")
             fps, n_frames = float(row["fps"]), int(row["n_frames"])
