@@ -33,6 +33,10 @@ def convert_rows(rows: list[dict[str, str]], data_root: Path) -> list[dict[str, 
                 f"line {line}: transcript_kind is not gloss; English translations "
                 "must not be relabeled as ASL gloss"
             )
+        if not row["transcript"].strip():
+            raise ValueError(f"line {line}: reviewed gloss transcript must not be empty")
+        if not row["source_url"].strip().startswith(("https://", "http://")):
+            raise ValueError(f"line {line}: source_url must be an HTTP(S) URL")
         if row["permission_status"].strip().lower() != "approved":
             raise ValueError(f"line {line}: source permission is not approved")
         if row["consent"].strip().lower() not in {"yes", "true", "1"}:
