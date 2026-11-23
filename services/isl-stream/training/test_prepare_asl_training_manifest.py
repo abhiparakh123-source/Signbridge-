@@ -51,10 +51,11 @@ class PrepareAslManifestTests(unittest.TestCase):
             item["transcript"] = " "
             with self.assertRaisesRegex(ValueError, "must not be empty"):
                 convert_rows([item], root)
-            item = row()
-            item["source_url"] = "not-a-url"
-            with self.assertRaisesRegex(ValueError, "HTTP"):
-                convert_rows([item], root)
+            for invalid_url in ("not-a-url", "https://", "https://bad host/path"):
+                item = row()
+                item["source_url"] = invalid_url
+                with self.assertRaisesRegex(ValueError, "valid HTTP"):
+                    convert_rows([item], root)
 
     def test_refuses_unapproved_permission(self):
         with tempfile.TemporaryDirectory() as directory:
