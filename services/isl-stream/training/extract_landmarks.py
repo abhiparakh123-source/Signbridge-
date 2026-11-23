@@ -132,6 +132,30 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
     }
 
 
+def build_feature_manifest_row(
+    row: dict[str, str], feature_rel: Path, stats: dict
+) -> dict[str, str]:
+    """Preserve optional source provenance alongside each extracted feature file."""
+    return {
+        "clip_id": row["clip_id"].strip(),
+        "signer_id": row["signer_id"].strip(),
+        "sign_language": row["sign_language"].strip().upper(),
+        "feature_path": feature_rel.as_posix(),
+        "gloss": row["label"].strip().upper().replace(",", " "),
+        "consent": "yes",
+        "split": row["split"].strip().lower(),
+        "source_dataset": (row.get("source_dataset") or "").strip(),
+        "source_clip_id": (row.get("source_clip_id") or row["clip_id"]).strip(),
+        "source_media_path": (row.get("video_path") or "").strip(),
+        "start_ms": (row.get("start_ms") or "").strip(),
+        "end_ms": (row.get("end_ms") or "").strip(),
+        "license_id": (row.get("license_id") or "").strip(),
+        "attribution": (row.get("attribution") or "").strip(),
+        "source_url": (row.get("source_url") or "").strip(),
+        "feature_sha256": stats["sha256"],
+    }
+
+
 def validate_signer_splits(rows: list[dict[str, str]]) -> None:
     """Fail before expensive extraction if a signer leaks across data splits."""
     signer_splits: dict[str, set[str]] = {}
@@ -222,20 +246,17 @@ def main() -> int:
         feature_path = root / feature_rel
         try:
             stats = extract_video(video_path, feature_path, args.max_fps)
-            output_rows.append({
-                "clip_id": clip_id,
-                "signer_id": row["signer_id"].strip(),
-                "sign_language": row["sign_language"].strip().upper(),
-                "feature_path": feature_rel.as_posix(),
-                "gloss": row["label"].strip().upper().replace(",", " "),
-                "consent": "yes",
-                "split": row["split"].strip().lower(),
-            })
+            output_rows.append(build_feature_manifest_row(row, feature_rel, stats))
             print(json.dumps({"clip_id": clip_id, **stats}))
         except Exception as exc:
             failures.append({"clip_id": clip_id, "error": str(exc)})
     with output_manifest.open("w", newline="", encoding="utf-8") as handle:
-        fields = ["clip_id", "signer_id", "sign_language", "feature_path", "gloss", "consent", "split"]
+        fields = [
+            "clip_id", "signer_id", "sign_language", "feature_path", "gloss",
+            "consent", "split", "source_dataset", "source_clip_id",
+            "source_media_path", "start_ms", "end_ms", "license_id",
+            "attribution", "source_url", "feature_sha256",
+        ]
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(output_rows)
