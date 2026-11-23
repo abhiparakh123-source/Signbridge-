@@ -28,8 +28,16 @@ def iter_bounded_windows(chunks, max_frames: int, overlap_frames: int = 0):
 
     for chunk in chunks:
         values = np.asarray(chunk)
-        if values.ndim != 2 or not np.isfinite(values).all():
-            raise ValueError("each chunk must be a finite [frames,feature_dim] array")
+        if values.ndim != 2:
+            raise ValueError("each chunk must be a finite numeric [frames,feature_dim] array")
+        if (
+            not np.issubdtype(values.dtype, np.number)
+            or np.issubdtype(values.dtype, np.complexfloating)
+            or not np.isfinite(values).all()
+        ):
+            raise ValueError("each chunk must be a finite numeric [frames,feature_dim] array")
+        if values.shape[1] < 1:
+            raise ValueError("feature_dim must be positive")
         if values.shape[0] == 0:
             continue
         if feature_dim is None:
