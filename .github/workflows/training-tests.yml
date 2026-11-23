@@ -1,0 +1,31 @@
+name: SIGNBRIDGE training pipeline tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/isl-stream/training/**"
+      - ".github/workflows/training-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/isl-stream/training/**"
+      - ".github/workflows/training-tests.yml"
+jobs:
+  training-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU training test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "numpy>=1.26,<2.0"
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Compile training modules
+        run: python -m compileall -q services/isl-stream/training
+      - name: Run synthetic training pipeline tests
+        working-directory: services/isl-stream
+        run: python -m unittest training.test_train_ctc -v
