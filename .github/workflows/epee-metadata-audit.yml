@@ -43,7 +43,10 @@ jobs:
           PY
       - name: Run full metadata and annotation audit
         run: |
-          python services/isl-stream/training/audit_epee_metadata.py             --metadata "$EPEE_DATASET_ROOT/metadata.csv"             --dataset-root "$EPEE_DATASET_ROOT"             --output "$RUNNER_TEMP/epee-metadata-audit.json"
+          python services/isl-stream/training/audit_epee_metadata.py \
+            --metadata "$EPEE_DATASET_ROOT/metadata.csv" \
+            --dataset-root "$EPEE_DATASET_ROOT" \
+            --output "$RUNNER_TEMP/epee-metadata-audit.json"
       - name: Publish audit report
         uses: actions/upload-artifact@v4
         with:
