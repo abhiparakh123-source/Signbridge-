@@ -24,6 +24,21 @@ video. Do not point it at a full recording and assume the timestamps will be
 applied. Prepare the authorized clip files first, or add a separately reviewed
 timestamp-aware extraction stage.
 
+## Metadata audit
+
+Before extracting any video, run the corpus audit to produce a private JSON
+summary of clip counts, signer counts by split, transcript types, modalities,
+and clip-duration coverage:
+
+```bash
+python services/isl-stream/training/audit_asl_corpus.py \\
+  /path/to/asl_metadata.csv \\
+  --output /path/to/private/asl-corpus-audit.json
+```
+
+The audit fails closed on invalid metadata. A passing report is not a legal
+opinion, a video-quality check, or expert validation of ASL glosses.
+
 ## Commands
 
 From the repository root:
