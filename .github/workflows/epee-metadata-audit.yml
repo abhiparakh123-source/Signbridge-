@@ -9,6 +9,7 @@ on:
     paths:
       - "services/isl-stream/training/audit_epee_metadata.py"
       - "services/isl-stream/training/test_audit_epee_metadata.py"
+      - "services/isl-stream/training/inspect_epee_keypoint_inventory.py"
       - "services/isl-stream/training/design_epee_signer_split.py"
       - ".github/workflows/epee-metadata-audit.yml"
 
@@ -54,6 +55,17 @@ jobs:
           python services/isl-stream/training/design_epee_signer_split.py \
             --metadata "$EPEE_DATASET_ROOT/metadata.csv" \
             --output "$RUNNER_TEMP/epee-signer-split-plan.json"
+      - name: Inspect keypoint file inventory and total size (metadata only)
+        run: |
+          python services/isl-stream/training/inspect_epee_keypoint_inventory.py \
+            --output "$RUNNER_TEMP/epee-keypoint-inventory.json"
+      - name: Publish keypoint inventory report
+        uses: actions/upload-artifact@v4
+        with:
+          name: signbridge-epee-keypoint-inventory
+          path: ${{ runner.temp }}/epee-keypoint-inventory.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Publish audit report
         uses: actions/upload-artifact@v4
         with:
