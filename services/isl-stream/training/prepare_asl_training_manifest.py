@@ -25,7 +25,10 @@ def convert_rows(rows: list[dict[str, str]], data_root: Path) -> list[dict[str, 
     seen = set()
     signer_splits: dict[str, set[str]] = {}
     for line, row in enumerate(rows, start=2):
-        missing = sorted(key for key in REQUIRED if not (row.get(key) or "").strip())
+        missing = sorted(
+            key for key in REQUIRED - {"transcript"}
+            if not (row.get(key) or "").strip()
+        )
         if missing:
             raise ValueError(f"line {line}: missing fields: {', '.join(missing)}")
         if row["transcript_kind"].strip().lower() != "gloss":
