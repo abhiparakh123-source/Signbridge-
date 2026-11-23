@@ -50,6 +50,37 @@ Actions:
 - Keep the raw dataset and derivatives private; do not put them in GitHub or a
   public app bundle.
 
+## 1A. User-supplied YouTube ASL learning reference
+
+Playlist supplied for the family project:
+https://youtube.com/playlist?list=PLMN7QCuj6dfaUwmtdkdKhINGZzyGwp7Q1
+
+Treat this playlist as an educational/reference source for discovering useful
+everyday vocabulary and conversation topics. It is **not** an approved training
+corpus merely because it is publicly viewable.
+
+Safe use in this project:
+- Keep the playlist URL as a learning reference; do not mirror or bundle its
+  videos in the app or repository.
+- Build a human-reviewed vocabulary/topic index from lesson titles and other
+  metadata that can lawfully be accessed. Record the original video URL and
+  the reviewer/date for each entry.
+- Do not treat English captions, subtitles or lesson descriptions as ASL gloss
+  labels. They may describe intended meaning, but they do not encode the exact
+  signed sequence or non-manual grammar.
+- Before downloading footage, extracting frames/landmarks, or using any video
+  to train or evaluate a model, identify the creator/rightsholder and obtain
+  explicit written permission covering machine-learning use, derived features,
+  private deployment, retention and deletion. Follow YouTube terms and any
+  additional dataset terms.
+- If permission is unavailable, use the playlist only as a learning/reference
+  resource and obtain model-training examples from a separately permissioned
+  dataset or Deaf ASL signers.
+
+This source can help scope the initial vocabulary and family conversation
+scenarios, but a vocabulary playlist alone is not evidence of continuous ASL
+sentence-recognition performance.
+
 ## 2. Permissioned signer recordings
 
 Once a baseline exists, recruit fluent Deaf ASL signers remotely through
