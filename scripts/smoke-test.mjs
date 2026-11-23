@@ -28,6 +28,7 @@ const required = [
   ["speech recognition error handling", /r\.onerror/],
   ["speech synthesis fallback", /speechSynthesis/],
   ["translation limitation disclosure", /MODEL NOT CONNECTED/],
+  ["ASL-first default language", /const LANGS=\["American Sign Language \(ASL\)","Indian Sign Language \(ISL\)","British Sign Language \(BSL\)"\]/],
   ["iPhone-compatible media recorder formats", /video\/mp4/],
   ["family camera preview attachment lifecycle", /videoRef\.current&&streamRef\.current/],
   ["conversation confirmation warning", /Confirm, don't guess/]
