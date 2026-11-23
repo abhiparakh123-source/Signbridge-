@@ -49,6 +49,10 @@ def load_manifest(path: Path, root: Path, language: str):
             raise ValueError(f"invalid signer or split for clip {clip_id}")
         if row["consent"].strip().lower() not in {"yes", "true", "1"}:
             raise ValueError(f"clip {clip_id} has no explicit consent")
+        # Corpora with an explicit rights-review field must be approved.
+        permission_status = row.get("permission_status", "").strip().lower()
+        if permission_status and permission_status != "approved":
+            raise ValueError(f"clip {clip_id} source permission is not approved")
         row_language = row["sign_language"].strip().upper()
         if row_language not in {"ISL", "ASL", "BSL"}:
             raise ValueError(f"invalid sign language for clip {clip_id}")
