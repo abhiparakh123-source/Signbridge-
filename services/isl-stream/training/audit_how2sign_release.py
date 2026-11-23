@@ -59,7 +59,7 @@ def inspect_table(path: Path) -> dict:
 
     structure_present = bool(gloss_cols and id_cols and split_cols and signer_cols)
     structurally_complete = (
-        structure_present and rows > 0 and missing_id_rows == 0
+        structure_present and len(rows) > 0 and missing_id_rows == 0
         and missing_split_rows == 0 and missing_signer_rows == 0
         and duplicate_ids == 0
     )
@@ -82,7 +82,7 @@ def inspect_table(path: Path) -> dict:
         "reason": (
             "Candidate only: verify annotation provenance, gloss convention, signer IDs, "
             "split integrity, rights and expert review before creating a training manifest."
-            if required_present and nonempty_gloss_rows > 0
+            if structurally_complete and nonempty_gloss_rows > 0
             else "Not a usable gloss candidate; translation-only tables must not be relabeled as gloss."
         ),
     }
