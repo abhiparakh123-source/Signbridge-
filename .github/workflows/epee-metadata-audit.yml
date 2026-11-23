@@ -47,10 +47,22 @@ jobs:
             --metadata "$EPEE_DATASET_ROOT/metadata.csv" \
             --dataset-root "$EPEE_DATASET_ROOT" \
             --output "$RUNNER_TEMP/epee-metadata-audit.json"
+      - name: Design signer-disjoint split from audited metadata
+        run: |
+          python services/isl-stream/training/design_epee_signer_split.py \
+            --metadata "$EPEE_DATASET_ROOT/metadata.csv" \
+            --output "$RUNNER_TEMP/epee-signer-split-plan.json"
       - name: Publish audit report
         uses: actions/upload-artifact@v4
         with:
           name: signbridge-epee-metadata-audit
           path: ${{ runner.temp }}/epee-metadata-audit.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish signer split plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: signbridge-epee-signer-split-plan
+          path: ${{ runner.temp }}/epee-signer-split-plan.json
           if-no-files-found: error
           retention-days: 14
