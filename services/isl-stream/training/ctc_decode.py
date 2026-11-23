@@ -57,7 +57,7 @@ def decode_frame_ids_incremental(frame_ids, vocabulary, previous_frame_id=None):
         except TypeError as exc:
             raise ValueError("frame IDs must be integers") from exc
         if token_id not in reverse:
-            raise ValueError("model emitted a token absent from its vocabulary")
+            raise ValueError(f"token ID {token_id} is absent from vocabulary")
         if token_id != previous and token_id != 0:
             emitted.append(reverse[token_id])
         previous = token_id
