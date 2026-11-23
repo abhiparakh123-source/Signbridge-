@@ -142,3 +142,7 @@ source clip identity, timestamp ranges, explicit transcript type and recorded
 license/attribution/permission fields. It does not download or train on data.
 In particular, English translations are not relabeled as ASL gloss. See
 `docs/asl-first-pilot.md` for the schema and command.
+
+## Landmark feature provenance
+
+The extractor carries optional source metadata into the generated feature manifest: source dataset and clip IDs, original media-relative path, segment timestamps when supplied, license ID, attribution, source URL, and a SHA-256 digest of the generated feature array. Family-only manifests without corpus provenance fields remain supported; missing optional fields are left blank, and the source clip ID falls back to the family clip ID. The digest identifies the exact extracted feature file, not the authenticity or legal status of the source video. Keep manifests and feature arrays in private storage.
