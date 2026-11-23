@@ -120,6 +120,13 @@ class ExtractorTimestampTests(unittest.TestCase):
     def test_open_ended_family_clip_starts_at_zero(self):
         self.assertEqual(frame_window(25.0), (0, None))
 
+    def test_non_aligned_start_rounds_up_to_avoid_preceding_frame(self):
+        self.assertEqual(frame_window(30.0, 1001, 2500), (31, 75))
+
+    def test_interval_shorter_than_one_frame_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "shorter than one source frame"):
+            frame_window(30.0, 1001, 1010)
+
     def test_timestamp_window_rejects_negative_or_reversed_ranges(self):
         for start, end in ((-1, 1000), (1000, 1000), (2000, 1000)):
             with self.subTest(start=start, end=end), self.assertRaises(ValueError):
