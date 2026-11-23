@@ -16,11 +16,28 @@ The currently published GloSL README confirms that the CSV schema contains separ
 
 The upstream How2Sign materials describe gloss as a linguistic annotation: ASL linguists annotated signs in ELAN, using capitalized English gloss tokens as approximate labels for ASL signs. A gloss is explicitly not an English translation. This makes the upstream corpus a plausible *candidate* for continuous ASL gloss research, but it does not prove that GloSL's `gloss` column is a faithful export of that tier or that every row has the same annotation type.
 
-**Result of this review:** the schema is promising, but label suitability is **not yet established**. Do not train on the `gloss` column until the actual CSV's `gloss_type` distribution, sample labels, row quality, and `card.json` transformation/provenance details have been inspected. No annotation CSV or media corpus was downloaded as part of this review, so no row-level statistics are claimed.
+## Automated CSV inventory (23 Nov 2026)
+
+A GitHub Actions workflow fetched only `annotations.csv` and `card.json` from the public Hugging Face dataset; it did not download videos or pose files. The inventory script completed successfully on all 34,305 CSV rows. The JSON report is retained as the workflow artifact `signbridge-asl-metadata-audit` (7-day retention).
+
+Observed results from the CSV:
+- Rows: **34,305**.
+- Split counts: train **30,814**, dev **1,527**, test **1,964**.
+- `gloss_type` is empty on **34,305 / 34,305** rows.
+- `gloss` is empty on **34,305 / 34,305** rows.
+- `signer` is empty on **34,305 / 34,305** rows.
+- Start/end timestamp values are invalid or absent on **34,305 / 34,305** rows.
+- FPS and frame-count fields are present and positive on all rows.
+- `video_ref` is present on all rows.
+- No duplicate IDs, invalid split names, or video/signer split-leak examples were found; however, because signer values are empty for every row, signer-disjointness **cannot** be assessed from this CSV.
+
+Interpretation: despite the schema advertising gloss-related columns, this published CSV provides **no usable gloss labels, no gloss-type labels, no signer IDs, and no usable timestamps** in the audited rows. The inventory does not inspect media alignment or validate source permissions. These are material blockers, not merely missing optional metadata. The previous “candidate only” conclusion is now stronger: this particular CSV revision is **not suitable for supervised continuous-gloss training as supplied**.
+
+The audit report deliberately keeps `training_approved: false`. No values were inferred or filled from English `text`, video IDs, or assumptions.
 
 ## Local annotation inventory
 
-Do not clone or download the full video/pose corpus just to inspect its metadata. Obtain only the annotation CSV and provenance files through an allowed route, then run:
+Do not clone or download the full video/pose corpus just to inspect its metadata. The automated workflow is at `.github/workflows/asl-metadata-audit.yml`; it retrieves the small metadata files and publishes only the JSON audit report. For a separately obtained CSV, run:
 
 ```bash
 python -m training.audit_glosl_annotations \
@@ -54,7 +71,7 @@ Never synthesize `consent=yes`, `permission_status=approved`, or a license ID fr
 
 ## Import gates
 
-A reviewed adapter may map GloSL `dev` to SIGNBRIDGE `validation` only after all checks pass. It must preserve original clip IDs, signer IDs, timestamps, source URLs, attribution, and the exact gloss label/type. It must not use the English `text` field as gloss.
+A reviewed adapter may map GloSL `dev` to SIGNBRIDGE's `validation` only after all checks pass. It must preserve original clip IDs, signer IDs, timestamps, source URLs, attribution, and the exact gloss label/type. It must not use the English `text` field as gloss.
 
 Training remains blocked until:
 
@@ -68,33 +85,4 @@ If signer overlap exists, do not silently accept it: create a genuinely signer-d
 
 ## Current decision
 
-**Do not download the 85 GB corpus or start training yet.** First inspect the small annotation/provenance files and obtain the required permissions. In particular, confirm whether the upstream research-only grant and the GloSL repackaging terms permit this specific private application use and retention of derived features/checkpoints. This review note does not certify legal rights, signer consent, gloss quality, or model readiness.
-
-
-## Machine-readable GloSL card inspection (23 Nov 2026)
-
-The public Hugging Face `card.json` was inspected directly (revision shown on the file page: `d714db7`). It confirms:
-
-- `annotation_types` is an empty array, and `modalities` lists pose, text, and video — **not gloss**. This is a material warning: the README's generic CSV schema includes a `gloss`/`gloss_type` column, but the machine-readable card does not declare gloss as an annotation type. Do not assume the column contains human-annotated gloss labels.
-- `signers` is null, so the card supplies no signer count.
-- The split policy is explicitly imported How2Sign official train/validation/test and **video-disjoint**; signer-disjointness is not established.
-- The provenance reports 34,305 clips and 133 clips missing video.
-- The card says source RGB clips are not rehosted and should be obtained from How2Sign; its `video.hosted` field is true while the note says not rehosted. Treat this internal inconsistency as unresolved metadata, not as evidence that video is available or authorized.
-- The card's access block asserts public visibility, CC BY-NC 4.0, redistributable=true, and reupload_ok=public-nc. These are repackager-provided assertions, not independent proof that upstream How2Sign grants every downstream use, nor proof of participant consent for this application's training and checkpoint retention.
-
-The CSV's 6.8 MB file page confirms the file exists but its contents are too large for the page renderer. **No row-level CSV values or gloss_type counts were inspected.** The card's empty `annotation_types` makes the next step more cautious: retrieve and sample the actual CSV before deciding whether it is usable at all.
-
-Updated decision: **not approved; gloss supervision is currently unsubstantiated by the machine-readable card.** Do not train or prepare a training manifest from this dataset on the strength of the README schema alone.
-
-
-## Annotation CSV retrieval attempt (23 Nov 2026)
-
-The Hugging Face Data Studio preview was opened. It reports a train preview of 114 rows, but the rendered table exposes only the `id` column and clip IDs; it does not expose `gloss`, `gloss_type`, `signer`, `text`, or timing columns. The page also reports that its DuckDB WASM SQL console failed to initialize. Direct browser retrieval of the CSV and the datasets-server rows endpoint was not available through the current inspection route.
-
-Therefore:
-- No CSV row contents were inspected.
-- No `gloss_type` distribution or gloss examples can be reported.
-- No signer overlap, empty gloss, timing, or video-reference counts can be independently recomputed.
-- The previous claim that the card's empty `annotation_types` makes gloss supervision unsubstantiated remains a caution, not proof that every CSV gloss is invalid.
-
-Next retrieval route: obtain only `annotations.csv` (6.8 MB) and `card.json` from the Hugging Face file download controls or HF CLI, then run the repository audit locally. Do not fetch `videos/` or `poses/` for this metadata-only step. Training remains blocked.
+**Do not download the 85 GB corpus or start training on this GloSL CSV.** The automated metadata audit shows that the published CSV has no gloss labels, gloss types, signer IDs, or valid timestamps. A different authorized source or a corrected annotation release is required. Confirm whether the upstream research-only grant and the GloSL repackaging terms permit this specific private application use and retention of derived features/checkpoints before using any replacement data. This review note does not certify legal rights, signer consent, or model readiness.
