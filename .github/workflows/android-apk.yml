@@ -2,21 +2,17 @@ name: Build SIGNBRIDGE Android APK
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ["Build and smoke-test SIGNBRIDGE"]
     branches: [main]
-    paths:
-      - "src/**"
-      - "public/**"
-      - "index.html"
-      - "package.json"
-      - "capacitor.config.json"
-      - ".github/workflows/android-apk.yml"
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   android-apk:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
