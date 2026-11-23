@@ -25,11 +25,15 @@ def write_fixture(path: Path, *, duplicate_last=False, unknown_signer=False):
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         for signer, kind in SIGNERS:
-            for index in range(300):
+            phrase_ids = (
+                [str(i) for i in range(1, 301)]
+                if signer != "ECHO"
+                else [str(i) for i in range(2, 301) if i != 17] + ["301", "302"]
+            ) if kind == "parallel" else [f"{signer}-phrase-{i}" for i in range(1, 301)]
+            for index, phrase in enumerate(phrase_ids, start=1):
                 actual_signer = "UNKNOWN" if unknown_signer and signer == "HOTEL" else signer
-                phrase = str(index + 1)
                 writer.writerow({
-                    "clip_id": f"{signer}-{index + 1}",
+                    "clip_id": f"{signer}-{index}",
                     "signer_id": actual_signer,
                     "phrase_id": phrase,
                     "parallel": "yes" if kind == "parallel" else "no",
@@ -60,8 +64,9 @@ class EpeeSignerSplitTests(unittest.TestCase):
         self.assertEqual(set(summary["validation"]["signers"]), {"DELTA", "GOLF"})
         self.assertEqual(set(summary["test"]["signers"]), {"ECHO", "HOTEL"})
         protocol = plan["evaluation_protocol"]
-        self.assertEqual(protocol["primary_seen_phrase_test_count"], 300)
-        self.assertEqual(protocol["test_only_zero_shot_phrase_count"], 0)
+        self.assertEqual(protocol["primary_seen_phrase_test_count"], 298)
+        self.assertEqual(protocol["test_only_zero_shot_phrase_count"], 2)
+        self.assertEqual(protocol["test_only_zero_shot_phrase_ids"], ["301", "302"])
 
     def test_duplicate_clip_ids_are_rejected(self):
         write_fixture(self.metadata, duplicate_last=True)
