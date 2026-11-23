@@ -182,7 +182,7 @@ def validate_signer_splits(rows: list[dict[str, str]]) -> None:
             raise ValueError(f"line {line}: split must be train, validation, or test")
         signer_splits.setdefault(signer, set()).add(split)
     conflicts = {
-        signer: sorted(splits)
+        signer: [name for name in ("train", "validation", "test") if name in splits]
         for signer, splits in signer_splits.items()
         if len(splits) > 1
     }
