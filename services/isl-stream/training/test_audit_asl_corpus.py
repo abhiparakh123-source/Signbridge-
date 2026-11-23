@@ -42,7 +42,7 @@ class AuditAslCorpusTests(unittest.TestCase):
     def test_invalid_manifest_returns_validation_errors(self):
         report = audit_rows([row("a", "signer-a", "train")])
         self.assertFalse(report["ok"])
-        self.assertTrue(any("multiple" not in e for e in report["errors"]))
+        self.assertTrue(any("train, validation, and test" in e for e in report["errors"]))
 
 
 if __name__ == "__main__":
