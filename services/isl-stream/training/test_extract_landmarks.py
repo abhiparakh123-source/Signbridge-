@@ -8,6 +8,7 @@ import numpy as np
 
 from training.extract_landmarks import (
     FEATURE_DIM,
+    frame_window,
     build_feature_manifest_row,
     pack_landmarks,
     safe_clip_filename,
@@ -111,6 +112,18 @@ class ExtractorProvenanceTests(unittest.TestCase):
         self.assertEqual(result["license_id"], "")
         self.assertEqual(result["feature_sha256"], "def456")
 
+
+class ExtractorTimestampTests(unittest.TestCase):
+    def test_timestamp_interval_maps_to_half_open_frame_window(self):
+        self.assertEqual(frame_window(30.0, 1000, 2500), (30, 75))
+
+    def test_open_ended_family_clip_starts_at_zero(self):
+        self.assertEqual(frame_window(25.0), (0, None))
+
+    def test_timestamp_window_rejects_negative_or_reversed_ranges(self):
+        for start, end in ((-1, 1000), (1000, 1000), (2000, 1000)):
+            with self.subTest(start=start, end=end), self.assertRaises(ValueError):
+                frame_window(30.0, start, end)
 
 class ExtractorPrimitiveTests(unittest.TestCase):
     def test_sampling_stride_never_exceeds_requested_rate(self):
