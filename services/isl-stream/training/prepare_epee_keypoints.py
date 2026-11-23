@@ -157,6 +157,7 @@ def convert_dataset(
                 "consent": "yes", "split": split, "source_dataset": DATASET_ID,
                 "source_clip_id": clip_id, "phrase_id": phrase,
                 "license_id": "CC-BY-NC-SA-4.0",
+                "permission_status": "pending_review",
                 "source_url": DATASET_URL, "feature_dim": str(FEATURE_DIM),
                 "feature_sha256": digest,
             })
