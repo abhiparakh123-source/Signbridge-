@@ -9,10 +9,44 @@ import numpy as np
 
 from prepare_epee_keypoints import (
     clean_gloss, convert_dataset, read_annotations, split_signers,
+    validate_permission_record,
 )
 
 
 class EpeeAdapterTests(unittest.TestCase):
+    def _approved_permission_record(self, path: Path):
+        path.write_text(json.dumps({
+            "status": "approved",
+            "dataset_id": "CLERC-DATA/epee",
+            "license_id": "CC-BY-NC-SA-4.0",
+            "approved_by": "Test rights reviewer",
+            "reviewed_at": "2026-11-23",
+            "written_permission_reference": "https://example.org/permission-letter",
+            "approved_uses": [
+                "download_dataset", "create_derived_features", "train_model",
+                "retain_model_checkpoint", "deploy_private_non_revenue_family_app",
+            ],
+        }), encoding="utf-8")
+
+    def test_permission_record_must_be_approved_and_cover_all_uses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "permission.json"
+            path.write_text(json.dumps({"status": "pending"}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "must be approved"):
+                validate_permission_record(path)
+            self._approved_permission_record(path)
+            self.assertEqual(validate_permission_record(path)["status"], "approved")
+
+    def test_permission_record_rejects_missing_checkpoint_rights(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "permission.json"
+            self._approved_permission_record(path)
+            record = json.loads(path.read_text(encoding="utf-8"))
+            record["approved_uses"].remove("retain_model_checkpoint")
+            path.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "retain_model_checkpoint"):
+                validate_permission_record(path)
+
     def test_clean_gloss_normalizes_whitespace_and_case(self):
         self.assertEqual(clean_gloss("  what   UP  "), "WHAT UP")
 
@@ -63,7 +97,9 @@ class EpeeAdapterTests(unittest.TestCase):
                 writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
                 writer.writeheader()
                 writer.writerows(rows)
-            result = convert_dataset(root, output, ["A"], ["B"], ["C"])
+            permission = Path(directory) / "permission.json"
+            self._approved_permission_record(permission)
+            result = convert_dataset(root, output, ["A"], ["B"], ["C"], permission)
             self.assertEqual(result["clips"], 3)
             self.assertEqual(result["feature_dim"], 384)
             feature = np.load(output / "features" / "c_train.npy", allow_pickle=False)
