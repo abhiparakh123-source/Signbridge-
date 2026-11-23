@@ -121,7 +121,10 @@ def validate_permission_record(path: Path) -> dict:
     uses = record.get("approved_uses")
     if not isinstance(uses, list):
         raise ValueError("permission record approved_uses must be a list")
-    missing = sorted(REQUIRED_PERMISSION_USES - set(uses))
+    if any(not isinstance(use, str) for use in uses):
+        raise ValueError("permission record approved_uses must contain only strings")
+    normalized_uses = {use.strip() for use in uses if use.strip()}
+    missing = sorted(REQUIRED_PERMISSION_USES - normalized_uses)
     if missing:
         raise ValueError("permission record does not approve required uses: " + ", ".join(missing))
     return record
