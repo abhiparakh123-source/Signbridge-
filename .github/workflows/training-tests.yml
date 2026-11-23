@@ -28,4 +28,4 @@ jobs:
         run: python -m compileall -q services/isl-stream/training
       - name: Run synthetic training pipeline tests
         working-directory: services/isl-stream
-        run: python -m unittest training.test_train_ctc training.test_checkpoint_validation training.test_inference_loading -v
+        run: python -m unittest training.test_train_ctc training.test_checkpoint_validation training.test_inference_loading test_model_runtime -v
