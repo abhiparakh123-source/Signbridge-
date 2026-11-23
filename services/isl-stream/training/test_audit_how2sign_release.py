@@ -33,9 +33,9 @@ class How2SignAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "incomplete.csv"
             path.write_text(
-                "id,split,signer,gloss\\n"
-                "clip-1,train,s1,HELLO\\n"
-                "clip-1,test,,THANK-YOU\\n",
+                "id,split,signer,gloss\n"
+                "clip-1,train,s1,HELLO\n"
+                "clip-1,test,,THANK-YOU\n",
                 encoding="utf-8",
             )
             report = inspect_table(path)
