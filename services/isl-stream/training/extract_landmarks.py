@@ -132,6 +132,30 @@ def extract_video(video_path: Path, output_path: Path, max_fps: float) -> dict:
     }
 
 
+def validate_signer_splits(rows: list[dict[str, str]]) -> None:
+    """Fail before expensive extraction if a signer leaks across data splits."""
+    signer_splits: dict[str, set[str]] = {}
+    for line, row in enumerate(rows, start=2):
+        signer = (row.get("signer_id") or "").strip()
+        split = (row.get("split") or "").strip().lower()
+        if not signer:
+            raise ValueError(f"line {line}: signer_id is required")
+        if split not in {"train", "validation", "test"}:
+            raise ValueError(f"line {line}: split must be train, validation, or test")
+        signer_splits.setdefault(signer, set()).add(split)
+    conflicts = {
+        signer: sorted(splits)
+        for signer, splits in signer_splits.items()
+        if len(splits) > 1
+    }
+    if conflicts:
+        detail = "; ".join(
+            f"{signer}: {', '.join(splits)}"
+            for signer, splits in sorted(conflicts.items())
+        )
+        raise ValueError("signers must be exclusive to one split: " + detail)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True, help="family video manifest")
@@ -153,6 +177,10 @@ def main() -> int:
         rows = list(reader)
     if not rows:
         parser.error("manifest has no clips")
+    try:
+        validate_signer_splits(rows)
+    except ValueError as exc:
+        parser.error(str(exc))
     output_manifest.parent.mkdir(parents=True, exist_ok=True)
     output_rows = []
     failures = []
