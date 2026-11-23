@@ -29,11 +29,23 @@ def audit_annotations(path: Path) -> dict:
     video_splits: dict[str, set[str]] = defaultdict(set)
     seen_ids: set[str] = set()
     total = 0
+    timestamp_invalid = 0
+    fps_invalid = 0
+    frame_count_invalid = 0
+    missing_video_ref = 0
+    timing_columns_available = False
+    fps_column_available = False
+    frame_count_column_available = False
+    video_ref_column_available = False
 
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         headers = {str(x or "").strip() for x in (reader.fieldnames or [])}
         missing = sorted(REQUIRED - headers)
+        timing_columns_available = {"start", "end"}.issubset(headers)
+        fps_column_available = "fps" in headers
+        frame_count_column_available = "n_frames" in headers
+        video_ref_column_available = "video_ref" in headers
         if missing:
             raise ValueError("annotations missing required columns: " + ", ".join(missing))
         for row in reader:
@@ -44,6 +56,24 @@ def audit_annotations(path: Path) -> dict:
             gloss = (row.get("gloss") or "").strip()
             gloss_type = (row.get("gloss_type") or "").strip()
             video_ref = (row.get("video_ref") or "").strip()
+            if timing_columns_available:
+                try:
+                    start, end = float(row.get("start") or ""), float(row.get("end") or "")
+                    timestamp_invalid += not (start >= 0 and end > start)
+                except (TypeError, ValueError):
+                    timestamp_invalid += 1
+            if fps_column_available:
+                try:
+                    fps_invalid += not (float(row.get("fps") or "") > 0)
+                except (TypeError, ValueError):
+                    fps_invalid += 1
+            if frame_count_column_available:
+                try:
+                    frame_count_invalid += not (int(row.get("n_frames") or "") > 0)
+                except (TypeError, ValueError):
+                    frame_count_invalid += 1
+            if video_ref_column_available:
+                missing_video_ref += not bool(video_ref)
             counts[split or "<empty>"] += 1
             gloss_types[gloss_type or "<empty>"] += 1
             empty_id += not bool(clip_id)
@@ -70,6 +100,14 @@ def audit_annotations(path: Path) -> dict:
         "empty_id_rows": empty_id,
         "invalid_split_rows": invalid_split,
         "duplicate_ids": duplicate_ids,
+        "timing_columns_available": timing_columns_available,
+        "invalid_timestamp_rows": timestamp_invalid if timing_columns_available else None,
+        "fps_column_available": fps_column_available,
+        "invalid_fps_rows": fps_invalid if fps_column_available else None,
+        "frame_count_column_available": frame_count_column_available,
+        "invalid_frame_count_rows": frame_count_invalid if frame_count_column_available else None,
+        "video_ref_column_available": video_ref_column_available,
+        "missing_video_ref_rows": missing_video_ref if video_ref_column_available else None,
         "signers_in_multiple_splits": len(signer_leaks),
         "videos_in_multiple_splits": len(video_leaks),
         "signer_leak_examples": signer_leaks[:20],
