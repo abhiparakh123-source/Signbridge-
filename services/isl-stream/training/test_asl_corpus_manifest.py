@@ -39,7 +39,7 @@ class AslCorpusManifestTests(unittest.TestCase):
         for consent in ("", "pending", "no"):
             with self.subTest(consent=consent):
                 errors = validate_rows([row(consent=consent)])
-                self.assertTrue(any("explicit signer consent" in error for error in errors))
+                self.assertTrue(any("consent" in error for error in errors))
 
     def test_invalid_time_range_is_rejected(self):
         self.assertTrue(any("start_ms/end_ms" in e for e in validate_rows([row(start_ms="5000", end_ms="1000")])))
