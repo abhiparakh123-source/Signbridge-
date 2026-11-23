@@ -47,6 +47,7 @@ jobs:
           python services/isl-stream/training/audit_epee_metadata.py \
             --metadata "$EPEE_DATASET_ROOT/metadata.csv" \
             --dataset-root "$EPEE_DATASET_ROOT" \
+            --remote-keypoint-headers \
             --output "$RUNNER_TEMP/epee-metadata-audit.json"
       - name: Design signer-disjoint split from audited metadata
         run: |
