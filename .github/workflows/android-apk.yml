@@ -55,7 +55,20 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # Maven Central can briefly rate-limit hosted runners (HTTP 429).
+          # Retry the complete dependency/build step with backoff; never skip failures.
+          for attempt in 1 2 3 4; do
+            if ./gradlew --no-daemon --max-workers=2 assembleDebug; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 4 ]; then
+              echo "Android build failed after 4 attempts."
+              exit 1
+            fi
+            delay=$((attempt * 30))
+            echo "Gradle build failed; retrying in ${delay}s (attempt $((attempt + 1))/4)."
+            sleep "$delay"
+          done
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
