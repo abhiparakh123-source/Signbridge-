@@ -60,3 +60,47 @@ The failed GloSL-How2Sign CSV audit is recorded in [GLOSL_HOW2SIGN_REVIEW.md](./
 - BOBSL: https://www.robots.ox.ac.uk/~vgg/data/bobsl/
 
 This is a technical screening note, not legal advice or a rights determination.
+
+
+## Épée adapter implemented (23 Nov 2026)
+
+A dedicated adapter now exists at `prepare_epee_keypoints.py`, with focused tests in
+`test_prepare_epee_keypoints.py`. It preserves Épée's own `[frames,128,3]`
+schema by flattening each frame to 384 float32 features; it does not try to
+reinterpret these coordinates as the existing 1,699-feature Holistic schema.
+
+The adapter:
+- reads the release's `metadata.csv`, per-clip annotation JSON and keypoint NPY;
+- checks annotation identity, ASL language, gloss text, segment time bounds,
+  frame count, finite coordinates and verified hand slots;
+- requires explicit train/validation/test signer lists;
+- rejects signer overlap and phrase IDs crossing splits (important for the
+  five-signer parallel phrase grid);
+- writes a standard CTC feature manifest and per-clip 384-D arrays;
+- requires a local `--permission-record` file before conversion.
+
+Example after rights have been confirmed and the dataset is downloaded locally:
+
+```bash
+python prepare_epee_keypoints.py \
+  --dataset-root /path/to/epee \
+  --output-root /path/to/signbridge-epee-prepared \
+  --train-signers ALPHA BRAVO CHARLIE DELTA ECHO \
+  --validation-signers GOLF \
+  --test-signers HOTEL \
+  --permission-record /path/to/written-permission-review.txt
+```
+
+The signer names above are illustrative only: inspect the actual metadata and
+choose signer groups whose phrase IDs do not overlap. The script deliberately
+fails if a selected phrase is shared across splits. Do not assume that the
+example partition is valid for the downloaded release.
+
+This adapter and its tests are code scaffolding, not permission, dataset audit,
+model training, or recognition. The permission-record flag only requires a
+local review record to exist; it does not verify its legal sufficiency. The
+public CC BY-NC-SA 4.0 terms still need written clarification from CLERC for
+the intended private family-app use and checkpoint obligations. The 384-D
+feature arrays are not interchangeable with 1,699-D Holistic arrays; the
+existing CTC trainer can consume them because it infers the input dimension,
+but inference/runtime configuration must match the resulting checkpoint.
