@@ -1,4 +1,7 @@
+import hashlib
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -8,6 +11,7 @@ from training.extract_landmarks import (
     build_feature_manifest_row,
     pack_landmarks,
     safe_clip_filename,
+    sha256_file,
     sampling_stride,
     validate_signer_splits,
 )
@@ -41,6 +45,25 @@ class ExtractorSplitValidationTests(unittest.TestCase):
     def test_rejects_invalid_split(self):
         with self.assertRaisesRegex(ValueError, "split must be"):
             validate_signer_splits([{"signer_id": "s1", "split": "holdout"}])
+
+
+class ExtractorHashTests(unittest.TestCase):
+    def test_sha256_file_reads_in_small_chunks_and_matches_standard_digest(self):
+        payload = b"signbridge-landmark-feature-data" * 100
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "features.npy"
+            path.write_bytes(payload)
+            self.assertEqual(
+                sha256_file(path, chunk_size=17),
+                hashlib.sha256(payload).hexdigest(),
+            )
+
+    def test_sha256_rejects_non_positive_chunk_size(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "empty.bin"
+            path.write_bytes(b"")
+            with self.assertRaisesRegex(ValueError, "chunk_size must be positive"):
+                sha256_file(path, chunk_size=0)
 
 
 class ExtractorProvenanceTests(unittest.TestCase):
