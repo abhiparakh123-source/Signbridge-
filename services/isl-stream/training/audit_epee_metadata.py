@@ -150,9 +150,17 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
                 raise ValueError(f"keypoint header shape {shape}, expected {(frame_count, 128, 3)}")
             return shape
 
-        # Bounded concurrency avoids thousands of slow sequential HTTP requests.
-        with ThreadPoolExecutor(max_workers=12) as pool:
-            futures = {pool.submit(inspect_header, item): item for item in remote_candidates}
+        # Sample evenly across the corpus: one request per clip triggers upstream
+        # rate limits and is unnecessary for validating the shared NPY schema.
+        sample_size = min(24, len(remote_candidates))
+        if sample_size:
+            stride = max(1, len(remote_candidates) // sample_size)
+            selected = remote_candidates[::stride][:sample_size]
+        else:
+            selected = []
+        report["keypoint_header_sampled"] = len(selected)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {pool.submit(inspect_header, item): item for item in selected}
             for future in as_completed(futures):
                 row_index, clip_id, _ = futures[future]
                 try:
@@ -193,7 +201,9 @@ def audit(root: Path | None, metadata_bytes: bytes, check_remote_headers: bool =
     if len(ids) != len(rows):
         report["warnings"].append("clip IDs are not all unique")
     if check_remote_headers and report["keypoint_header_checks"] != len(rows):
-        report["warnings"].append("not every keypoint NPY header was verified")
+        report["warnings"].append(
+            "remote NPY header schema was sampled; not every clip header was fetched"
+        )
     report["error_summary"] = dict(sorted(Counter(
         (item.get("error", "unknown") if isinstance(item, dict) else str(item))
         for item in report["errors"]
