@@ -256,7 +256,6 @@ def main() -> int:
     parser.add_argument("--validation-signers", nargs="+", required=True)
     parser.add_argument("--test-signers", nargs="+", required=True)
     parser.add_argument("--parallel-only", action="store_true", help="include only clips marked parallel=yes in metadata.csv")
-    parser.add_argument("--parallel-only", action="store_true", help="include only clips marked parallel=yes in metadata.csv")
     authorization_group = parser.add_mutually_exclusive_group(required=True)
     authorization_group.add_argument("--permission-record", type=Path)
     authorization_group.add_argument(
