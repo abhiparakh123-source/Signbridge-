@@ -62,17 +62,17 @@ for (const [label, pattern] of required) {
 // Guard the managed WebRTC path separately from the legacy manual-SDP fallback.
 const metered = readFileSync("src/MeteredCall.jsx", "utf8");
 const meteredRequired = [
-  ["Metered SDK import", /import\\s*\\{\\s*MeteredPeer\\s*\\}\\s*from\\s*["']@metered-ca\\/realtime["']/],
-  ["publishable key passed only from build environment", /new MeteredPeer\\(\\{\\s*apiKey\\s*\\}\\)/],
-  ["room codes are generated with secure randomness", /crypto\\.getRandomValues/],
-  ["private room join", /peer\\.join\\(["']signbridge-/],
-  ["local audio is attached to the peer", /peer\\.addStream\\(stream,\\s*\\{\\s*role:\\s*["']audio["']\\s*\\}\\)/],
-  ["remote peer stream is attached to audio playback", /remote\\.on\\(["']stream-added["']/],
-  ["peer-left clears remote audio", /peer\\.on\\(["']peer-left["']/],
-  ["local tracks are stopped during teardown", /getTracks\\(\\)\\.forEach\\(track\\s*=>\\s*track\\.stop\\(\\)\\)/],
-  ["remote captions require an explicit user action", /onClick=\\{toggleRemoteCaptions\\}/],
-  ["remote captions use the remote audio track", /recognition\\.start\\(track\\)/],
-  ["mobile remote-track captions remain disabled", /Android\\|iPhone\\|iPad\\|iPod/],
+  ["Metered SDK import", /import\s*\{\s*MeteredPeer\s*\}\s*from\s*["']@metered-ca\/realtime["']/],
+  ["publishable key passed only from build environment", /new MeteredPeer\(\{\s*apiKey\s*\}\)/],
+  ["room codes are generated with secure randomness", /crypto\.getRandomValues/],
+  ["private room join", /peer\.join\(["']signbridge-/],
+  ["local audio is attached to the peer", /peer\.addStream\(stream,\s*\{\s*role:\s*["']audio["']\s*\}\)/],
+  ["remote peer stream is attached to audio playback", /remote\.on\(["']stream-added["']/],
+  ["peer-left clears remote audio", /peer\.on\(["']peer-left["']/],
+  ["local tracks are stopped during teardown", /getTracks\(\)\.forEach\(track\s*=>\s*track\.stop\(\)\)/],
+  ["remote captions require an explicit user action", /onClick=\{toggleRemoteCaptions\}/],
+  ["remote captions use the remote audio track", /recognition\.start\(track\)/],
+  ["mobile remote-track captions remain disabled", /Android\|iPhone\|iPad\|iPod/],
   ["free-tier quota limitations are disclosed", /Free-tier quotas apply/]
 ];
 for (const [label, pattern] of meteredRequired) {
