@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from training.inference import load_model, predict
+from training.inference import load_model, normalize_landmark_features, predict
 from training.model import LandmarkCTCModel
 
 
@@ -45,6 +45,29 @@ class InferenceCheckpointLoadingTests(unittest.TestCase):
             )
             self.assertIsInstance(output, list)
             self.assertTrue(all(token in {"HELLO"} for token in output))
+
+
+    def test_landmark_normalization_uses_checkpoint_stats_and_preserves_missing(self):
+        raw = np.zeros((2, 384), dtype=np.float32)
+        raw[0, :3] = [3.0, 5.0, 7.0]
+        raw[1, :3] = [5.0, 7.0, 9.0]
+        stats = {
+            "method": "coordinate_zscore_observed_landmarks",
+            "mean": [4.0, 6.0, 8.0],
+            "scale": [2.0, 2.0, 2.0],
+            "missing_landmark": "preserve_zero_triple",
+        }
+        normalized = normalize_landmark_features(raw, stats)
+        np.testing.assert_allclose(normalized[0, :3], [-0.5, -0.5, -0.5])
+        np.testing.assert_array_equal(normalized[:, 3:], 0.0)
+
+    def test_rejects_invalid_checkpoint_normalization(self):
+        with self.assertRaises(ValueError):
+            normalize_landmark_features(
+                np.zeros((2, 384), dtype=np.float32),
+                {"method": "unknown", "mean": [0, 0, 0], "scale": [1, 1, 1],
+                 "missing_landmark": "preserve_zero_triple"},
+            )
 
     def test_rejects_checkpoint_with_incompatible_state_dict(self):
         with tempfile.TemporaryDirectory() as directory:
