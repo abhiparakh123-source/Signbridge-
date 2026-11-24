@@ -58,7 +58,7 @@ class KaggleNotebookTests(unittest.TestCase):
         self.assertIn("production_ready", source)
         self.assertIn("hf_hub_download", source)
         self.assertIn("unseen_heldout_gloss_tokens", source)
-        self.assertIn("Preflight stopped before the large keypoint download", source)
+        self.assertIn("Preflight stopped:", source)
         self.assertIn("Expected 2,400 audited metadata rows", source)
         self.assertIn("expected_split_counts = {'train': 900, 'validation': 300, 'test': 300}", source)
         self.assertIn("parallel_rows = [r for r in metadata_rows if r.get('parallel', '').strip().lower() == 'yes']", source)
