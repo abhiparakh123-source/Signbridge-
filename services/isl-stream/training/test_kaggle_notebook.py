@@ -41,6 +41,10 @@ class KaggleNotebookTests(unittest.TestCase):
             with self.subTest(cell=index):
                 ast.parse(normalized, filename=f"kaggle-notebook-cell-{index}")
 
+    def test_converter_registers_parallel_only_flag_once(self):
+        source = (TRAINING / "prepare_epee_keypoints.py").read_text(encoding="utf-8")
+        self.assertEqual(source.count('parser.add_argument("--parallel-only"'), 1)
+
     def test_notebook_uses_free_gpu_and_does_not_fetch_rgb_videos(self):
         source = "\n".join(
             "".join(cell.get("source", []))
