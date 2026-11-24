@@ -361,6 +361,14 @@ def main():
                 "sign_language": args.language,
                 "model_type": "landmark_ctc_transformer_baseline",
                 "architecture": {"width": 256, "heads": 4, "layers": 4, "dropout": 0.1, "causal": args.causal},
+                # Required by every future inference adapter: use these exact
+                # train-split statistics rather than refitting on live frames.
+                "normalization": {
+                    "method": "coordinate_zscore_observed_landmarks",
+                    "mean": normalizer.mean.tolist(),
+                    "scale": normalizer.scale.tolist(),
+                    "missing_landmark": "preserve_zero_triple",
+                },
                 "seed": args.seed,
             }
             # Write beside the destination, then atomically replace it. An
@@ -386,6 +394,13 @@ def main():
         "language": args.language,
         "oov_by_split": oov_by_split,
         "device": str(device),
+        "normalization": {
+            "method": "coordinate_zscore_observed_landmarks",
+            "mean": normalizer.mean.tolist(),
+            "scale": normalizer.scale.tolist(),
+            "missing_landmark": "preserve_zero_triple",
+            "fit_split": "train_only",
+        },
         "test_metrics": test_metrics,
         "history": history,
         "warning": "Gloss WER/CER measure this experimental gloss baseline only, not sentence translation quality or real-world sign comprehension.",
