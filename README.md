@@ -17,6 +17,9 @@ An accessibility-first web app/PWA concept for communication between Deaf, hard-
 
 ## ASL-first research pilot
 
+For the free Kaggle execution steps, see the [ASL Kaggle run guide](docs/free-asl-kaggle-guide.md). It covers the metadata preflight, free-tier setup, expected outputs and failure handling.
+
+
 The immediate model-development priority is now ASL, using rights-cleared continuous-signing research data where permitted. See the [ASL-first pilot plan](docs/asl-first-pilot.md). ISL remains a separate target; ASL and ISL are different languages, and an ASL model cannot interpret someone signing ISL. No ASL model is currently trained or connected.
 
 ## Real-time ISL translation plan
