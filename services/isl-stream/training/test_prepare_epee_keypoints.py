@@ -114,7 +114,7 @@ class EpeeAdapterTests(unittest.TestCase):
             self.assertEqual(result["skipped_unverified_hand_slot_clips"], 1)
             self.assertFalse((output / "features" / "c_nonparallel.npy").exists())
             self.assertEqual(result["feature_dim"], 384)
-            feature = np.load(output / "features" / "c_train.npy", allow_pickle=False)
+            feature = np.load(output / "features" / "c_train_verified.npy", allow_pickle=False)
             self.assertEqual(feature.shape, (8, 384))
             self.assertTrue((output / "features_manifest.csv").is_file())
 
