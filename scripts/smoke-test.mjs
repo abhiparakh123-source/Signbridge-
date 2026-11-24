@@ -63,6 +63,7 @@ for (const [label, pattern] of required) {
 const metered = readFileSync("src/MeteredCall.jsx", "utf8");
 const meteredRequired = [
   ["Metered SDK import", /import\s*\{\s*MeteredPeer\s*\}\s*from\s*["']@metered-ca\/realtime["']/],
+  ["missing Metered key clearly identifies manual fallback", /Managed internet calling is not configured in this build[\s\S]*?manual connection-code fallback/],
   ["publishable key passed only from build environment", /new MeteredPeer\(\{\s*apiKey\s*\}\)/],
   ["room codes are generated with secure randomness", /crypto\.getRandomValues/],
   ["private room join", /peer\.join\(["']signbridge-/],
