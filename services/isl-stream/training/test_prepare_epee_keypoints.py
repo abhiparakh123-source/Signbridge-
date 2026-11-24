@@ -84,12 +84,14 @@ class EpeeAdapterTests(unittest.TestCase):
             (root / "keypoints").mkdir()
             rows = []
             for clip, signer, phrase, parallel in [
-                ("c_train", "A", "p1", "yes"), ("c_val", "B", "p1", "yes"),
-                ("c_test", "C", "p1", "yes"), ("c_nonparallel", "A", "p2", "no")
+                ("c_train", "A", "p1", "yes"), ("c_train_verified", "A", "p3", "yes"),
+                ("c_val", "B", "p1", "yes"), ("c_test", "C", "p1", "yes"),
+                ("c_nonparallel", "A", "p2", "no")
             ]:
                 rows.append({
                     "clip_id": clip, "signer_id": signer, "phrase_id": phrase,
-                    "fps": "30", "n_frames": "8", "hand_slots": "verified",
+                    "fps": "30", "n_frames": "8",
+                    "hand_slots": "unverified" if clip == "c_train" else "verified",
                     "parallel": parallel, "text_en": "Hello", "gloss_sequence": "HELLO",
                 })
                 (root / "annotations" / f"{clip}.json").write_text(json.dumps({
@@ -109,6 +111,7 @@ class EpeeAdapterTests(unittest.TestCase):
             self._approved_permission_record(permission)
             result = convert_dataset(root, output, ["A"], ["B"], ["C"], permission, parallel_only=True)
             self.assertEqual(result["clips"], 3)
+            self.assertEqual(result["skipped_unverified_hand_slot_clips"], 1)
             self.assertFalse((output / "features" / "c_nonparallel.npy").exists())
             self.assertEqual(result["feature_dim"], 384)
             feature = np.load(output / "features" / "c_train.npy", allow_pickle=False)
