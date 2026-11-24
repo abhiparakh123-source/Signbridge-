@@ -52,6 +52,9 @@ class KaggleNotebookTests(unittest.TestCase):
         self.assertIn("'--causal'", source)
         self.assertIn("videos_downloaded", source)
         self.assertIn("production_ready", source)
+        self.assertIn("hf_hub_download", source)
+        self.assertIn("unseen_heldout_gloss_tokens", source)
+        self.assertIn("Preflight stopped before the large keypoint download", source)
         self.assertNotIn("HF_TOKEN", source)
         self.assertNotIn("RENDER_API_KEY", source)
 
