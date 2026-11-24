@@ -5,7 +5,7 @@ This guide runs the existing ASL research notebook in your own Kaggle account. I
 ## What this pilot does
 
 1. Checks the dataset metadata before downloading the larger files.
-2. Verifies the audited 2,400-row inventory and signer-disjoint 1,200/600/600 split.
+2. Verifies the audited 2,400-row inventory, isolates the 1,500-clip five-signer parallel grid, and uses a signer-disjoint 900/300/300 train/validation/test split.
 3. Downloads only metadata, annotation JSON and keypoint arrays (not RGB videos).
 4. Converts keypoints into 384-dimensional landmark features.
 5. Runs a short, three-epoch ASL gloss-recognition CTC baseline.
