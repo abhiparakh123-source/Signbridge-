@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from collections import Counter
 import json
 import os
 import random
@@ -230,6 +231,9 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
     in_vocab_word_errors = in_vocab_word_total = 0
     in_vocab_char_errors = in_vocab_char_total = 0
     oov_reference_tokens = oov_reference_clips = 0
+    predicted_frame_classes = Counter()
+    decoded_gloss_classes = Counter()
+    predicted_frame_count = decoded_gloss_count = nonempty_hypothesis_clips = 0
     with torch.no_grad():
         for features, lengths, targets, target_lengths in loader:
             features, lengths = features.to(device), lengths.to(device)
@@ -247,9 +251,13 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
             for index, target_length in enumerate(target_lengths.tolist()):
                 reference_ids = targets[offset:offset + target_length].tolist()
                 offset += target_length
-                predicted_ids = greedy_ctc_decode(
-                    predictions[index, :int(output_lengths[index])].tolist()
-                )
+                frame_ids = predictions[index, :int(output_lengths[index])].tolist()
+                predicted_frame_classes.update(frame_ids)
+                predicted_frame_count += len(frame_ids)
+                predicted_ids = greedy_ctc_decode(frame_ids)
+                decoded_gloss_classes.update(predicted_ids)
+                decoded_gloss_count += len(predicted_ids)
+                nonempty_hypothesis_clips += int(bool(predicted_ids))
                 reference = [reverse_vocabulary[token] for token in reference_ids]
                 hypothesis = [reverse_vocabulary[token] for token in predicted_ids]
                 word_errors += edit_distance(reference, hypothesis)
@@ -278,6 +286,18 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
         "in_vocabulary_only_clips": count - oov_reference_clips,
         "in_vocabulary_only_gloss_wer": in_vocab_word_errors / max(in_vocab_word_total, 1),
         "in_vocabulary_only_gloss_cer": in_vocab_char_errors / max(in_vocab_char_total, 1),
+        "predicted_frame_count": predicted_frame_count,
+        "blank_frame_fraction": predicted_frame_classes.get(0, 0) / max(predicted_frame_count, 1),
+        "decoded_gloss_token_count": decoded_gloss_count,
+        "nonempty_hypothesis_clips": nonempty_hypothesis_clips,
+        "top_predicted_frame_classes": [
+            {"token": reverse_vocabulary.get(token, str(token)), "frames": frames}
+            for token, frames in predicted_frame_classes.most_common(12)
+        ],
+        "top_decoded_gloss_tokens": [
+            {"token": reverse_vocabulary.get(token, str(token)), "count": occurrences}
+            for token, occurrences in decoded_gloss_classes.most_common(12)
+        ],
     }
 
 
