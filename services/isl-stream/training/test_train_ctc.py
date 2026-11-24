@@ -20,6 +20,7 @@ from training.train_ctc import (
     evaluate,
     load_manifest,
     run_epoch,
+    summarize_training_targets,
 )
 
 
@@ -98,6 +99,23 @@ class TrainerPipelineTests(unittest.TestCase):
             self.assertIn("top_decoded_gloss_tokens", metrics)
             self.assertLessEqual(len(metrics["top_predicted_frame_classes"]), 12)
             self.assertLessEqual(len(metrics["top_decoded_gloss_tokens"]), 12)
+
+
+    def test_training_target_statistics_measure_singleton_sparsity(self):
+        rows = [
+            {"_gloss": "HELLO THANK YOU"},
+            {"_gloss": "HELLO PLEASE"},
+            {"_gloss": "THANK YOU"},
+        ]
+        stats = summarize_training_targets(rows)
+        self.assertEqual(stats["training_clips"], 3)
+        self.assertEqual(stats["total_gloss_tokens"], 7)
+        self.assertEqual(stats["unique_gloss_tokens"], 4)
+        self.assertEqual(stats["singleton_gloss_types"], 1)
+        self.assertAlmostEqual(stats["singleton_token_fraction"], 1 / 7)
+        self.assertEqual(stats["median_tokens_per_clip"], 2.0)
+        self.assertEqual(stats["max_tokens_per_clip"], 3)
+        self.assertEqual(stats["most_frequent_training_glosses"][0], {"token": "HELLO", "count": 2})
 
     def test_normalizer_uses_observed_training_points_and_preserves_missing(self):
         with tempfile.TemporaryDirectory() as directory:
