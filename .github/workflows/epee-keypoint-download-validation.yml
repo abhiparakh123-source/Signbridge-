@@ -1,0 +1,79 @@
+name: Download and validate Épée ASL keypoint arrays
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  download-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal dataset tools
+        run: python -m pip install --upgrade huggingface_hub numpy
+      - name: Download keypoint arrays (no videos)
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+        run: |
+          python services/isl-stream/training/download_epee_keypoints.py \
+            --destination "$RUNNER_TEMP/epee-dataset" \
+            --user-attests-rights \
+            --max-bytes 1073741824 \
+            --report "$RUNNER_TEMP/epee-download-report.json"
+      - name: Validate every downloaded array against the 128-point schema
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import numpy as np
+          root = Path(os.environ["RUNNER_TEMP"]) / "epee-dataset"
+          report_path = Path(os.environ["RUNNER_TEMP"]) / "epee-download-report.json"
+          report = json.loads(report_path.read_text())
+          files = sorted((root / "keypoints").glob("*.npy"))
+          errors, total_frames, min_frames, max_frames = [], 0, None, 0
+          for path in files:
+              try:
+                  arr = np.load(path, mmap_mode="r", allow_pickle=False)
+                  if arr.ndim != 3 or arr.shape[1:] != (128, 3):
+                      raise ValueError(f"unexpected shape {arr.shape}")
+                  if arr.shape[0] < 2:
+                      raise ValueError(f"too few frames: {arr.shape[0]}")
+                  if not np.isfinite(arr).all():
+                      raise ValueError("NaN or infinity found")
+                  n = int(arr.shape[0])
+                  total_frames += n
+                  min_frames = n if min_frames is None else min(min_frames, n)
+                  max_frames = max(max_frames, n)
+              except Exception as exc:
+                  errors.append({"file": path.name, "error": str(exc)})
+          result = {
+              **report,
+              "array_schema": "[frames, 128, 3]",
+              "arrays_checked": len(files),
+              "arrays_valid": len(files) - len(errors),
+              "total_frames": total_frames,
+              "min_frames_per_clip": min_frames,
+              "max_frames_per_clip": max_frames,
+              "validation_errors": errors[:50],
+              "validation_error_count": len(errors),
+              "payload_retained": False,
+              "videos_downloaded": False,
+          }
+          report_path.write_text(json.dumps(result, indent=2))
+          print(json.dumps(result, indent=2))
+          if len(files) != 2400 or errors:
+              raise SystemExit(1)
+          PY
+      - name: Publish validation report only (never dataset arrays)
+        uses: actions/upload-artifact@v4
+        with:
+          name: signbridge-epee-array-validation
+          path: ${{ runner.temp }}/epee-download-report.json
+          if-no-files-found: error
+          retention-days: 14
