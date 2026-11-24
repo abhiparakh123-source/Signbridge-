@@ -173,6 +173,9 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
     total_loss = 0.0
     count = 0
     word_errors = word_total = char_errors = char_total = 0
+    in_vocab_word_errors = in_vocab_word_total = 0
+    in_vocab_char_errors = in_vocab_char_total = 0
+    oov_reference_tokens = oov_reference_clips = 0
     with torch.no_grad():
         for features, lengths, targets, target_lengths in loader:
             features, lengths = features.to(device), lengths.to(device)
@@ -200,6 +203,15 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
                 ref_text, hyp_text = " ".join(reference), " ".join(hypothesis)
                 char_errors += edit_distance(list(ref_text), list(hyp_text))
                 char_total += len(ref_text)
+                oov_count = reference.count("<unk>")
+                if oov_count:
+                    oov_reference_tokens += oov_count
+                    oov_reference_clips += 1
+                else:
+                    in_vocab_word_errors += edit_distance(reference, hypothesis)
+                    in_vocab_word_total += len(reference)
+                    in_vocab_char_errors += edit_distance(list(ref_text), list(hyp_text))
+                    in_vocab_char_total += len(ref_text)
     if count == 0:
         raise ValueError("evaluation loader is empty")
     return {
@@ -207,6 +219,11 @@ def evaluate(model, loader, loss_fn, device, reverse_vocabulary):
         "gloss_wer": word_errors / max(word_total, 1),
         "gloss_cer": char_errors / max(char_total, 1),
         "clips": count,
+        "oov_reference_tokens": oov_reference_tokens,
+        "oov_reference_clips": oov_reference_clips,
+        "in_vocabulary_only_clips": count - oov_reference_clips,
+        "in_vocabulary_only_gloss_wer": in_vocab_word_errors / max(in_vocab_word_total, 1),
+        "in_vocabulary_only_gloss_cer": in_vocab_char_errors / max(in_vocab_char_total, 1),
     }
 
 
