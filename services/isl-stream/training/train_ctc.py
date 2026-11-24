@@ -95,15 +95,14 @@ class LandmarkDataset(Dataset):
         gloss_tokens = row["_gloss"].split()
         if not gloss_tokens:
             raise ValueError(f"empty token sequence for clip {row['clip_id']}")
-        unknown = set(gloss_tokens) - self.vocabulary.keys()
-        if unknown:
-            raise ValueError(f"clip {row['clip_id']} contains gloss tokens absent from training vocabulary: {sorted(unknown)}")
+        # Held-out signers may contain genuinely unseen glosses. Map those
+        # labels to an explicit <unk> class; never add held-out labels to vocab.
         minimum_frames = len(gloss_tokens) + sum(
             left == right for left, right in zip(gloss_tokens, gloss_tokens[1:])
         )
         if minimum_frames > values.shape[0]:
             raise ValueError(f"clip {row['clip_id']} has too few frames for a valid CTC alignment")
-        tokens = [self.vocabulary[token] for token in gloss_tokens]
+        tokens = [self.vocabulary.get(token, self.vocabulary["<unk>"]) for token in gloss_tokens]
         return torch.from_numpy(values.astype(np.float32)), torch.tensor(tokens, dtype=torch.long)
 
 
@@ -238,7 +237,7 @@ def main():
     vocabulary_tokens = sorted({token for row in train_rows for token in row["_gloss"].split()})
     if not vocabulary_tokens:
         raise ValueError("training split has no gloss vocabulary")
-    vocabulary = {"<blank>": 0, **{token: i + 1 for i, token in enumerate(vocabulary_tokens)}}
+    vocabulary = {"<blank>": 0, "<unk>": 1, **{token: i + 2 for i, token in enumerate(vocabulary_tokens)}}
     feature_dim = None
     # Preflight every split before training. This catches held-out gloss tokens,
     # corrupt arrays and shape mismatches before a DataLoader fails mid-run.
@@ -252,13 +251,8 @@ def main():
         if int(array.shape[1]) != feature_dim:
             raise ValueError(f"feature dimensions differ across splits (clip {row['clip_id']})")
         tokens = row["_gloss"].split()
-        unknown = set(tokens) - vocabulary.keys()
-        if unknown:
-            raise ValueError(
-                f"clip {row['clip_id']} in {row['_split']} split contains gloss tokens "
-                f"not present in training vocabulary: {sorted(unknown)}. "
-                "Add reviewed training examples or correct the label; do not leak test signers into training."
-            )
+        # Keep the signer-disjoint split intact. Unseen validation/test labels
+        # are represented by <unk> and counted in the report below.
         minimum_frames = len(tokens) + sum(
             left == right for left, right in zip(tokens, tokens[1:])
         )
@@ -311,8 +305,13 @@ def main():
     checkpoint = torch.load(args.output, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["state_dict"])
     test_metrics = evaluate(model, test_loader, loss_fn, device, reverse_vocabulary)
+    oov_by_split = {}
+    for split_name, split_rows in (("train", train_rows), ("validation", val_rows), ("test", test_rows)):
+        unseen = sorted({token for row in split_rows for token in row["_gloss"].split()} - set(vocabulary_tokens))
+        oov_by_split[split_name] = {"unique_unseen_glosses": unseen, "unique_unseen_count": len(unseen)}
     report = {
         "language": args.language,
+        "oov_by_split": oov_by_split,
         "device": str(device),
         "test_metrics": test_metrics,
         "history": history,
