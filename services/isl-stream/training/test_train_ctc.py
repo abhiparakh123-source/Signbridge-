@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 
 from training.train_ctc import (
     LandmarkDataset,
+    LandmarkNormalizer,
     collate,
     evaluate,
     load_manifest,
@@ -89,6 +90,34 @@ class TrainerPipelineTests(unittest.TestCase):
             self.assertEqual(metrics["clips"], 1)
             self.assertTrue(np.isfinite(metrics["ctc_loss"]))
             self.assertGreaterEqual(metrics["gloss_wer"], 0.0)
+
+    def test_normalizer_uses_observed_training_points_and_preserves_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "train.npy"
+            # Two observed landmarks; one absent landmark represented by zeros.
+            values = np.array([
+                [1, 2, 3] * 127 + [0, 0, 0],
+                [3, 4, 5] * 127 + [0, 0, 0],
+            ], dtype=np.float32)
+            np.save(path, values)
+            rows = [{"_path": path}]
+            normalizer = LandmarkNormalizer.fit(rows)
+            transformed = normalizer.transform(values)
+            self.assertTrue(np.isfinite(transformed).all())
+            self.assertTrue(np.array_equal(transformed[:, -3:], np.zeros((2, 3), dtype=np.float32)))
+            observed = transformed[:, :3]
+            self.assertAlmostEqual(float(observed[:, 0].mean()), 0.0, places=5)
+            self.assertAlmostEqual(float(observed[:, 1].mean()), 0.0, places=5)
+            self.assertAlmostEqual(float(observed[:, 2].mean()), 0.0, places=5)
+
+    def test_normalizer_rejects_non_384_dimensional_features(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "bad.npy"
+            np.save(path, np.ones((4, 12), dtype=np.float32))
+            with self.assertRaisesRegex(ValueError, "384-D"):
+                LandmarkNormalizer.fit([{"_path": path}])
 
     def test_maps_heldout_gloss_to_explicit_unknown_token(self):
         with tempfile.TemporaryDirectory() as directory:
