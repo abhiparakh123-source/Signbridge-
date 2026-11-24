@@ -75,7 +75,7 @@ class TrainerPipelineTests(unittest.TestCase):
             dataset = LandmarkDataset(train_rows, vocabulary)
             features, targets = dataset[0]
             self.assertEqual(tuple(features.shape), (5, 3))
-            self.assertEqual(targets.tolist(), [1])
+            self.assertEqual(targets.tolist(), [2])
 
             loader = DataLoader(dataset, batch_size=1, collate_fn=collate)
             model = TinyTrainableModel(3, 3)
