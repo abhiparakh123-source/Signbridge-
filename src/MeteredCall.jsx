@@ -309,8 +309,8 @@ export function MeteredCall({ apiKey }) {
       </div>
       <p className="privacy">
         Create a room and share its code with one trusted SIGNBRIDGE user. Both callers join the same room.
-        Calls use peer-to-peer WebRTC audio; signalling and TURN relay are provided by Metered free-tier
-        services, subject to published quotas.
+        Calls use peer-to-peer WebRTC audio and Metered signalling. TURN relay is available only when the
+        account has an active free TURN service, automatic TURN injection is enabled, and quota remains.
       </p>
       <div className="call-status" role="status">{status}</div>
 
