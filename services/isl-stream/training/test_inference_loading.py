@@ -10,7 +10,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from training.inference import load_model, normalize_landmark_features, predict
+from training.inference import (
+    iter_causal_predictions, load_model, normalize_landmark_features, predict,
+)
 from training.model import LandmarkCTCModel
 
 
@@ -68,6 +70,33 @@ class InferenceCheckpointLoadingTests(unittest.TestCase):
                 {"method": "unknown", "mean": [0, 0, 0], "scale": [1, 1, 1],
                  "missing_landmark": "preserve_zero_triple"},
             )
+
+
+    def test_causal_streaming_applies_checkpoint_normalization(self):
+        class CaptureModel:
+            causal = True
+            def __init__(self):
+                self.seen = None
+            def __call__(self, tensor, lengths):
+                self.seen = tensor.detach().cpu().numpy()
+                logits = torch.zeros((tensor.shape[1], 1, 2), dtype=tensor.dtype, device=tensor.device)
+                return torch.log_softmax(logits, dim=-1), lengths
+
+        raw = np.zeros((1, 384), dtype=np.float32)
+        raw[0, :3] = [2.0, 4.0, 6.0]
+        stats = {
+            "method": "coordinate_zscore_observed_landmarks",
+            "mean": [1.0, 2.0, 3.0],
+            "scale": [1.0, 2.0, 3.0],
+            "missing_landmark": "preserve_zero_triple",
+        }
+        model = CaptureModel()
+        list(iter_causal_predictions(
+            [raw], model, torch.device("cpu"), {"<blank>": 0, "HELLO": 1},
+            normalization=stats,
+        ))
+        np.testing.assert_allclose(model.seen[0, 0, :3], [1.0, 1.0, 1.0])
+        np.testing.assert_array_equal(model.seen[0, 0, 3:], 0.0)
 
     def test_rejects_checkpoint_with_incompatible_state_dict(self):
         with tempfile.TemporaryDirectory() as directory:
