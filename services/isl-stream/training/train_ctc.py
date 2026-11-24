@@ -183,6 +183,33 @@ def edit_distance(reference, hypothesis):
     return previous[-1]
 
 
+
+def summarize_training_targets(rows):
+    """Describe training-label sparsity without leaking held-out vocabulary."""
+    token_counts = Counter()
+    lengths = []
+    for row in rows:
+        tokens = row["_gloss"].split()
+        token_counts.update(tokens)
+        lengths.append(len(tokens))
+    total_tokens = sum(token_counts.values())
+    singleton_types = sum(count == 1 for count in token_counts.values())
+    return {
+        "training_clips": len(rows),
+        "total_gloss_tokens": total_tokens,
+        "unique_gloss_tokens": len(token_counts),
+        "singleton_gloss_types": singleton_types,
+        "singleton_token_fraction": (
+            sum(count for count in token_counts.values() if count == 1) / max(total_tokens, 1)
+        ),
+        "median_tokens_per_clip": float(np.median(lengths)) if lengths else 0.0,
+        "max_tokens_per_clip": max(lengths, default=0),
+        "most_frequent_training_glosses": [
+            {"token": token, "count": count}
+            for token, count in token_counts.most_common(20)
+        ],
+    }
+
 def greedy_ctc_decode(frame_ids, blank_id=0):
     decoded = []
     previous = None
@@ -414,6 +441,7 @@ def main():
         "language": args.language,
         "oov_by_split": oov_by_split,
         "device": str(device),
+        "training_target_statistics": summarize_training_targets(train_rows),
         "normalization": {
             "method": "coordinate_zscore_observed_landmarks",
             "mean": normalizer.mean.tolist(),
