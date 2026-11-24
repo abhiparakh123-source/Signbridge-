@@ -27,5 +27,8 @@ jobs:
         working-directory: services/isl-stream
         run: python -m unittest discover -v
       - run: npm run test:call-sdp
-      - run: npm run build
+      - name: Build web application
+        env:
+          VITE_METERED_REALTIME_KEY: ${{ secrets.METERED_REALTIME_KEY }}
+        run: npm run build
       - run: npm run test:smoke
