@@ -24,6 +24,10 @@ const app = readFileSync("src/App.jsx", "utf8");
 const required = [
   ["React import", /import React/],
   ["camera permission flow", /getUserMedia/],
+  ["call SDP validation is imported", /validateCallSdp/],
+  ["invalid offers are rejected before microphone permission", /validateCallSdp\(remoteOffer,"offer"\);if\(!validation\.ok\)/],
+  ["invalid answers are rejected before applying remote description", /validateCallSdp\(remoteAnswer,"answer"\);if\(!validation\.ok\)/],
+  ["restart offers are validated before applying", /validateCallSdp\(remoteOffer,"offer"\);if\(!validation\.ok\)/],
   ["call setup cancellation guard", /pcRef\.current!==pc/],
   ["call attempt invalidation", /callAttemptRef\.current\+=1/],
   ["ICE restart refreshes candidate diagnostics", /setIceCandidateTypes\(\[\]\);pc\.restartIce\?\.\(\)/],

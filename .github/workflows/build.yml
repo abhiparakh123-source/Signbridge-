@@ -26,5 +26,6 @@ jobs:
       - name: Validate family dataset and streaming protocol
         working-directory: services/isl-stream
         run: python -m unittest discover -v
+      - run: npm run test:call-sdp
       - run: npm run build
       - run: npm run test:smoke
