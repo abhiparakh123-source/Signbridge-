@@ -26,6 +26,7 @@ const required = [
   ["camera permission flow", /getUserMedia/],
   ["call setup cancellation guard", /pcRef\.current!==pc/],
   ["call attempt invalidation", /callAttemptRef\.current\+=1/],
+  ["call reset clears stale signaling codes", /setOffer\(""\);setAnswer\(""\);setRemoteOffer\(""\);setRemoteAnswer\(""\)/],
   ["ICE candidate type diagnostics", /pc\.onicecandidate=e=>\{const match=e\.candidate\?\.candidate\?\.match\(\/ typ \(host\|srflx\|prflx\|relay\)/],
   ["ICE candidate types exposed in call diagnostics", /Candidate types: \{iceCandidateTypes\.length/],
   ["stale call setup cannot overwrite a newer call", /callAttemptRef\.current!==attempt\|\|pcRef\.current!==pc/],
