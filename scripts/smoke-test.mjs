@@ -59,6 +59,27 @@ for (const [label, pattern] of required) {
   if (!pattern.test(app)) throw new Error(`Safety smoke check failed: ${label}`);
 }
 
+// Guard the managed WebRTC path separately from the legacy manual-SDP fallback.
+const metered = readFileSync("src/MeteredCall.jsx", "utf8");
+const meteredRequired = [
+  ["Metered SDK import", /import\\s*\\{\\s*MeteredPeer\\s*\\}\\s*from\\s*["']@metered-ca\\/realtime["']/],
+  ["publishable key passed only from build environment", /new MeteredPeer\\(\\{\\s*apiKey\\s*\\}\\)/],
+  ["room codes are generated with secure randomness", /crypto\\.getRandomValues/],
+  ["private room join", /peer\\.join\\(["']signbridge-/],
+  ["local audio is attached to the peer", /peer\\.addStream\\(stream,\\s*\\{\\s*role:\\s*["']audio["']\\s*\\}\\)/],
+  ["remote peer stream is attached to audio playback", /remote\\.on\\(["']stream-added["']/],
+  ["peer-left clears remote audio", /peer\\.on\\(["']peer-left["']/],
+  ["local tracks are stopped during teardown", /getTracks\\(\\)\\.forEach\\(track\\s*=>\\s*track\\.stop\\(\\)\\)/],
+  ["remote captions require an explicit user action", /onClick=\\{toggleRemoteCaptions\\}/],
+  ["remote captions use the remote audio track", /recognition\\.start\\(track\\)/],
+  ["mobile remote-track captions remain disabled", /Android\\|iPhone\\|iPad\\|iPod/],
+  ["free-tier quota limitations are disclosed", /Free-tier quotas apply/]
+];
+for (const [label, pattern] of meteredRequired) {
+  if (!pattern.test(metered)) throw new Error(`Metered call smoke check failed: ${label}`);
+}
+console.log(`Metered call smoke checks passed: ${meteredRequired.length} integration safeguards.`);
+
 const sw = readFileSync(join(dist, "sw.js"), "utf8");
 if (!sw.includes("cache.put(request,response.clone())")) throw new Error("Service worker does not cache fetched app assets for offline use");
 if (!sw.includes("signbridge-shell-v3")) throw new Error("Expected updated service worker cache version");
