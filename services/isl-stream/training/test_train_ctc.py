@@ -90,6 +90,14 @@ class TrainerPipelineTests(unittest.TestCase):
             self.assertEqual(metrics["clips"], 1)
             self.assertTrue(np.isfinite(metrics["ctc_loss"]))
             self.assertGreaterEqual(metrics["gloss_wer"], 0.0)
+            self.assertGreater(metrics["predicted_frame_count"], 0)
+            self.assertGreaterEqual(metrics["blank_frame_fraction"], 0.0)
+            self.assertLessEqual(metrics["blank_frame_fraction"], 1.0)
+            self.assertGreaterEqual(metrics["decoded_gloss_token_count"], 0)
+            self.assertIn("top_predicted_frame_classes", metrics)
+            self.assertIn("top_decoded_gloss_tokens", metrics)
+            self.assertLessEqual(len(metrics["top_predicted_frame_classes"]), 12)
+            self.assertLessEqual(len(metrics["top_decoded_gloss_tokens"]), 12)
 
     def test_normalizer_uses_observed_training_points_and_preserves_missing(self):
         with tempfile.TemporaryDirectory() as directory:
