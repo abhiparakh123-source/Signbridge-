@@ -70,7 +70,7 @@ class TrainerPipelineTests(unittest.TestCase):
             root = Path(directory)
             manifest = self.make_dataset(root)
             rows = load_manifest(manifest, root, "ASL")
-            vocabulary = {"<blank>": 0, "HELLO": 1}
+            vocabulary = {"<blank>": 0, "<unk>": 1, "HELLO": 2}
             train_rows = [row for row in rows if row["_split"] == "train"]
             dataset = LandmarkDataset(train_rows, vocabulary)
             features, targets = dataset[0]
@@ -78,13 +78,13 @@ class TrainerPipelineTests(unittest.TestCase):
             self.assertEqual(targets.tolist(), [1])
 
             loader = DataLoader(dataset, batch_size=1, collate_fn=collate)
-            model = TinyTrainableModel(3, 2)
+            model = TinyTrainableModel(3, 3)
             optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
             loss_fn = nn.CTCLoss(blank=0, zero_infinity=True)
             train_loss = run_epoch(model, loader, loss_fn, optimizer, torch.device("cpu"))
             self.assertTrue(np.isfinite(train_loss))
 
-            reverse = {0: "<blank>", 1: "HELLO"}
+            reverse = {0: "<blank>", 1: "<unk>", 2: "HELLO"}
             metrics = evaluate(model, loader, loss_fn, torch.device("cpu"), reverse)
             self.assertEqual(metrics["clips"], 1)
             self.assertTrue(np.isfinite(metrics["ctc_loss"]))
