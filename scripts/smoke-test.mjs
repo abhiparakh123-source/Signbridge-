@@ -24,6 +24,8 @@ const app = readFileSync("src/App.jsx", "utf8");
 const required = [
   ["React import", /import React/],
   ["camera permission flow", /getUserMedia/],
+  ["call setup cancellation guard", /pcRef\.current!==pc/],
+  ["peer connection registered before microphone permission", /pcRef\.current=pc;pc\.ontrack/],
   ["camera track cleanup", /getTracks\(\)\.forEach\(t=>t\.stop\(\)\)/],
   ["speech recognition error handling", /r\.onerror/],
   ["speech synthesis fallback", /speechSynthesis/],
