@@ -68,7 +68,7 @@ class EpeeAdapterTests(unittest.TestCase):
                    "text_en": "Hello", "parallel": "yes", "gloss_sequence": "HELLO"}
             path.write_text(json.dumps({
                 "clip_id": "c1", "signer_id": "A", "sign_language": "ASL",
-                "phrase_id": "p1", "text_en": "Hello", "parallel": parallel == "yes",
+                "phrase_id": "p1", "text_en": "Hello", "parallel": True,
                 "fps": 30.0, "n_frames": 30,
                 "segments": [{"gloss": "HELLO", "start": 0.1, "end": 0.5}],
             }), encoding="utf-8")
