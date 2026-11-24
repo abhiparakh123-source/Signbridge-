@@ -64,7 +64,7 @@ def ctc_greedy_decode(ids, vocabulary):
     return tokens
 
 
-def iter_causal_predictions(chunks, model, device: torch.device, vocabulary):
+def iter_causal_predictions(chunks, model, device: torch.device, vocabulary, normalization=None):
     """Yield newly decoded gloss tokens as chunks arrive.
 
     This research path recomputes the entire causal prefix for each chunk. It
@@ -87,7 +87,7 @@ def iter_causal_predictions(chunks, model, device: torch.device, vocabulary):
             feature_dim = values.shape[1]
         if values.shape[1] != feature_dim:
             raise ValueError("feature dimensions changed between chunks")
-        values = values.astype(np.float32, copy=False)
+        values = normalize_landmark_features(values.astype(np.float32, copy=False), normalization)
         accumulated = values if accumulated is None else np.concatenate((accumulated, values), axis=0)
         tensor = torch.from_numpy(accumulated).unsqueeze(0).to(device)
         lengths = torch.tensor([len(accumulated)], dtype=torch.long, device=device)
@@ -113,6 +113,7 @@ def iter_bounded_causal_predictions(
     *,
     max_frames: int,
     overlap_frames: int = 0,
+    normalization=None,
 ):
     """Yield newly decoded gloss tokens from bounded causal windows.
 
@@ -129,6 +130,7 @@ def iter_bounded_causal_predictions(
     for start, end, window in iter_bounded_windows(
         chunks, max_frames=max_frames, overlap_frames=overlap_frames
     ):
+        window = normalize_landmark_features(window, normalization)
         tensor = torch.from_numpy(window).unsqueeze(0).to(device)
         lengths = torch.tensor([len(window)], dtype=torch.long, device=device)
         with torch.no_grad():
