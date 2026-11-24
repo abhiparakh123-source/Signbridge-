@@ -55,6 +55,10 @@ class KaggleNotebookTests(unittest.TestCase):
         self.assertIn("hf_hub_download", source)
         self.assertIn("unseen_heldout_gloss_tokens", source)
         self.assertIn("Preflight stopped before the large keypoint download", source)
+        self.assertIn("Expected 2,400 audited metadata rows", source)
+        self.assertIn("expected_split_counts = {'train': 1200, 'validation': 600, 'test': 600}", source)
+        self.assertIn("Signer leakage detected across splits", source)
+        self.assertLess(source.index("unseen_heldout_gloss_tokens"), source.index("download_epee_keypoints.py"))
         self.assertNotIn("HF_TOKEN", source)
         self.assertNotIn("RENDER_API_KEY", source)
 
