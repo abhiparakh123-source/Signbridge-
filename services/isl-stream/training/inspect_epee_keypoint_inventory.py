@@ -7,7 +7,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from huggingface_hub import HfApi
 
 DATASET_ID = "CLERC-DATA/epee"
 EXPECTED_KEYPOINT_FILES = 2400
@@ -15,7 +14,9 @@ EXPECTED_KEYPOINT_FILES = 2400
 
 def inspect(api: Any | None = None, revision: str = "main") -> dict:
     """Read repository metadata only; never fetch any .npy file contents."""
-    api = api or HfApi()
+    if api is None:
+        from huggingface_hub import HfApi
+        api = HfApi()
     files = list(api.list_repo_tree(
         repo_id=DATASET_ID,
         repo_type="dataset",
