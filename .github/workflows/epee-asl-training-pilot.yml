@@ -1,0 +1,99 @@
+name: Train Épée ASL CTC baseline (free CPU pilot)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/epee-asl-training-pilot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU training dependencies
+        run: python -m pip install --upgrade huggingface_hub numpy torch
+      - name: Download pinned Épée v0.4 arrays and annotations
+        run: |
+          python services/isl-stream/training/download_epee_keypoints.py \
+            --destination "$RUNNER_TEMP/epee-dataset" \
+            --user-attests-rights \
+            --max-bytes 1073741824 \
+            --revision 9037c3f0278a900ac26eb4ba065a44d791d28f98 \
+            --report "$RUNNER_TEMP/epee-download-report.json"
+      - name: Convert audited arrays to 384-D CTC features
+        run: |
+          python services/isl-stream/training/prepare_epee_keypoints.py \
+            --dataset-root "$RUNNER_TEMP/epee-dataset" \
+            --output-root "$RUNNER_TEMP/epee-prepared" \
+            --train-signers ALPHA BRAVO CHARLIE FOXTROT \
+            --validation-signers DELTA GOLF \
+            --test-signers ECHO HOTEL \
+            --user-attests-rights
+      - name: Train one-epoch ASL CTC baseline on free CPU
+        run: |
+          python services/isl-stream/training/train_ctc.py \
+            --manifest "$RUNNER_TEMP/epee-prepared/features_manifest.csv" \
+            --data-root "$RUNNER_TEMP/epee-prepared" \
+            --language ASL \
+            --epochs 1 \
+            --batch-size 4 \
+            --seed 7 \
+            --output "$RUNNER_TEMP/epee-asl-ctc.pt"
+      - name: Create compact training evidence report
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          temp = Path(os.environ["RUNNER_TEMP"])
+          out = {
+              "dataset_revision": "9037c3f0278a900ac26eb4ba065a44d791d28f98",
+              "training_scope": "one-epoch experimental ASL gloss CTC baseline; free CPU runner",
+              "checkpoint_retained": False,
+              "dataset_payload_retained": False,
+              "production_ready": False,
+          }
+          for name, key in [
+              ("epee-download-report.json", "download"),
+              ("epee-asl-ctc.metrics.json", "training_metrics"),
+          ]:
+              path = temp / name
+              if path.exists():
+                  try:
+                      out[key] = json.loads(path.read_text())
+                  except Exception as exc:
+                      out[key + "_read_error"] = str(exc)
+          manifest = temp / "epee-prepared" / "features_manifest.csv"
+          if manifest.exists():
+              import csv
+              with manifest.open(newline="", encoding="utf-8") as f:
+                  rows = list(csv.DictReader(f))
+              out["converted_clips"] = len(rows)
+              out["split_counts"] = {s: sum(r["split"] == s for r in rows) for s in ("train","validation","test")}
+          checkpoint = temp / "epee-asl-ctc.pt"
+          out["checkpoint_created_on_runner"] = checkpoint.exists()
+          (temp / "epee-asl-training-pilot-report.json").write_text(json.dumps(out, indent=2))
+          print(json.dumps(out, indent=2))
+          PY
+      - name: Publish metrics and validation report only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signbridge-epee-asl-training-pilot-report
+          path: ${{ runner.temp }}/epee-asl-training-pilot-report.json
+          if-no-files-found: warn
+          retention-days: 14
