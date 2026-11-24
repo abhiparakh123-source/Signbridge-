@@ -51,7 +51,7 @@ jobs:
             --manifest "$RUNNER_TEMP/epee-prepared/features_manifest.csv" \
             --data-root "$RUNNER_TEMP/epee-prepared" \
             --language ASL \
-            --epochs 1 \
+            --epochs 20 \
             --batch-size 4 \
             --seed 7 \
             --output "$RUNNER_TEMP/epee-asl-ctc.pt"
@@ -64,8 +64,8 @@ jobs:
           temp = Path(os.environ["RUNNER_TEMP"])
           out = {
               "dataset_revision": "9037c3f0278a900ac26eb4ba065a44d791d28f98",
-              "training_scope": "one-epoch experimental ASL gloss CTC baseline; free CPU runner",
-              "checkpoint_retained": False,
+              "training_scope": "20-epoch experimental ASL gloss CTC baseline; free CPU runner",
+              "checkpoint_retained": (temp / "epee-asl-ctc.pt").exists(),
               "dataset_payload_retained": False,
               "production_ready": False,
           }
@@ -96,6 +96,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: signbridge-epee-asl-training-pilot-report
-          path: ${{ runner.temp }}/epee-asl-training-pilot-report.json
+          path: |
+            ${{ runner.temp }}/epee-asl-training-pilot-report.json
+            ${{ runner.temp }}/epee-asl-ctc.pt
+            ${{ runner.temp }}/epee-asl-ctc.metrics.json
           if-no-files-found: warn
           retention-days: 14
