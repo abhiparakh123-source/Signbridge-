@@ -100,6 +100,18 @@ class TrainerPipelineTests(unittest.TestCase):
             dataset = LandmarkDataset(validation_rows, {"<blank>": 0, "<unk>": 1, "TRAIN_ONLY": 2})
             _, targets = dataset[0]
             self.assertEqual(targets.tolist(), [1])
+            loader = DataLoader(dataset, batch_size=1, collate_fn=collate)
+            model = TinyTrainableModel(3, 3)
+            metrics = evaluate(
+                model,
+                loader,
+                nn.CTCLoss(blank=0, zero_infinity=True),
+                torch.device("cpu"),
+                {0: "<blank>", 1: "<unk>", 2: "TRAIN_ONLY"},
+            )
+            self.assertEqual(metrics["oov_reference_tokens"], 1)
+            self.assertEqual(metrics["oov_reference_clips"], 1)
+            self.assertEqual(metrics["in_vocabulary_only_clips"], 0)
 
     def test_rejects_signer_leakage_between_splits(self):
         with tempfile.TemporaryDirectory() as directory:
