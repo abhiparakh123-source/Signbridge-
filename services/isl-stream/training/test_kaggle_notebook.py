@@ -34,7 +34,7 @@ class KaggleNotebookTests(unittest.TestCase):
                 continue
             source = "".join(cell["source"])
             # IPython magics are valid in Kaggle/Jupyter but not Python's AST.
-            normalized = "\\n".join(
+            normalized = "\n".join(
                 "pass" if line.lstrip().startswith("%") else line
                 for line in source.splitlines()
             )
@@ -42,7 +42,7 @@ class KaggleNotebookTests(unittest.TestCase):
                 ast.parse(normalized, filename=f"kaggle-notebook-cell-{index}")
 
     def test_notebook_uses_free_gpu_and_does_not_fetch_rgb_videos(self):
-        source = "\\n".join(
+        source = "\n".join(
             "".join(cell.get("source", []))
             for cell in self.cells
             if cell["cell_type"] == "code"
