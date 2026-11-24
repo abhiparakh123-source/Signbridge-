@@ -77,10 +77,62 @@ def load_manifest(path: Path, root: Path, language: str):
     return checked
 
 
+class LandmarkNormalizer:
+    """Coordinate-wise normalization fitted on training landmarks only.
+
+    Épée encodes an absent landmark as an all-zero (x, y, z) triple. Such
+    triples are excluded from the statistics and remain exactly zero after
+    transformation, so missingness is not turned into a fabricated position.
+    """
+    def __init__(self, mean: np.ndarray, scale: np.ndarray):
+        self.mean = np.asarray(mean, dtype=np.float32)
+        self.scale = np.asarray(scale, dtype=np.float32)
+        if self.mean.shape != (3,) or self.scale.shape != (3,):
+            raise ValueError("normalizer expects three coordinate statistics")
+        if not np.isfinite(self.mean).all() or not np.isfinite(self.scale).all():
+            raise ValueError("normalizer statistics must be finite")
+        if np.any(self.scale <= 0):
+            raise ValueError("normalizer scales must be positive")
+
+    @classmethod
+    def fit(cls, rows):
+        totals = np.zeros(3, dtype=np.float64)
+        squared_totals = np.zeros(3, dtype=np.float64)
+        count = 0
+        for row in rows:
+            values = np.load(row["_path"], mmap_mode="r", allow_pickle=False)
+            validate_feature_array(values)
+            if values.shape[1] != 384:
+                raise ValueError("landmark normalization requires 384-D (128 x 3) features")
+            points = np.asarray(values, dtype=np.float64).reshape(-1, 128, 3)
+            present = np.any(points != 0.0, axis=-1)
+            observed = points[present]
+            if observed.size:
+                totals += observed.sum(axis=0)
+                squared_totals += np.square(observed).sum(axis=0)
+                count += observed.shape[0]
+        if count == 0:
+            raise ValueError("training split contains no present landmarks")
+        mean = totals / count
+        variance = np.maximum(squared_totals / count - np.square(mean), 1e-8)
+        return cls(mean.astype(np.float32), np.sqrt(variance).astype(np.float32))
+
+    def transform(self, values: np.ndarray) -> np.ndarray:
+        array = np.asarray(values, dtype=np.float32)
+        if array.ndim != 2 or array.shape[1] != 384:
+            raise ValueError("normalizer expects [frames, 384] features")
+        points = array.reshape(-1, 128, 3).copy()
+        present = np.any(points != 0.0, axis=-1)
+        points[present] = (points[present] - self.mean) / self.scale
+        # Absent landmarks are deliberately preserved as exact zero triples.
+        return points.reshape(-1, 384)
+
+
 class LandmarkDataset(Dataset):
-    def __init__(self, rows, vocabulary):
+    def __init__(self, rows, vocabulary, normalizer=None):
         self.rows = rows
         self.vocabulary = vocabulary
+        self.normalizer = normalizer
 
     def __len__(self):
         return len(self.rows)
@@ -92,6 +144,8 @@ class LandmarkDataset(Dataset):
             validate_feature_array(values)
         except ValueError as exc:
             raise ValueError(f"invalid feature array for clip {row['clip_id']}: {exc}") from exc
+        if self.normalizer is not None:
+            values = self.normalizer.transform(values)
         gloss_tokens = row["_gloss"].split()
         if not gloss_tokens:
             raise ValueError(f"empty token sequence for clip {row['clip_id']}")
@@ -278,13 +332,15 @@ def main():
     if feature_dim is None:
         raise ValueError("no feature arrays found")
 
+    # Fit normalization on training signers only; validation/test never affect stats.
+    normalizer = LandmarkNormalizer.fit(train_rows)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LandmarkCTCModel(feature_dim, len(vocabulary), causal=args.causal).to(device)
     loss_fn = torch.nn.CTCLoss(blank=0, zero_infinity=True)
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
-    train_loader = DataLoader(LandmarkDataset(train_rows, vocabulary), batch_size=args.batch_size, shuffle=True, collate_fn=collate)
-    val_loader = DataLoader(LandmarkDataset(val_rows, vocabulary), batch_size=args.batch_size, shuffle=False, collate_fn=collate)
-    test_loader = DataLoader(LandmarkDataset(test_rows, vocabulary), batch_size=args.batch_size, shuffle=False, collate_fn=collate)
+    train_loader = DataLoader(LandmarkDataset(train_rows, vocabulary, normalizer), batch_size=args.batch_size, shuffle=True, collate_fn=collate)
+    val_loader = DataLoader(LandmarkDataset(val_rows, vocabulary, normalizer), batch_size=args.batch_size, shuffle=False, collate_fn=collate)
+    test_loader = DataLoader(LandmarkDataset(test_rows, vocabulary, normalizer), batch_size=args.batch_size, shuffle=False, collate_fn=collate)
 
     best = float("inf")
     history = []
