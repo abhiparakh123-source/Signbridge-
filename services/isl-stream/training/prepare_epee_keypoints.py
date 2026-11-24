@@ -149,6 +149,7 @@ def convert_dataset(
     validation_signers: list[str], test_signers: list[str],
     permission_record: Path | None,
     user_attested: bool = False,
+    parallel_only: bool = False,
 ) -> dict:
     authorization = validate_permission_record(permission_record, user_attested=user_attested)
     root, output_root = root.resolve(), output_root.resolve()
@@ -174,6 +175,8 @@ def convert_dataset(
     for row in rows:
         clip_id, signer = row["clip_id"].strip(), row["signer_id"].strip()
         if signer not in owner:
+            continue
+        if parallel_only and row.get("parallel", "").strip().lower() != "yes":
             continue
         try:
             if not clip_id or clip_id in seen:
@@ -252,6 +255,7 @@ def main() -> int:
     parser.add_argument("--train-signers", nargs="+", required=True)
     parser.add_argument("--validation-signers", nargs="+", required=True)
     parser.add_argument("--test-signers", nargs="+", required=True)
+    parser.add_argument("--parallel-only", action="store_true", help="include only clips marked parallel=yes in metadata.csv")
     authorization_group = parser.add_mutually_exclusive_group(required=True)
     authorization_group.add_argument("--permission-record", type=Path)
     authorization_group.add_argument(
@@ -263,7 +267,7 @@ def main() -> int:
         result = convert_dataset(
             args.dataset_root, args.output_root, args.train_signers,
             args.validation_signers, args.test_signers, args.permission_record,
-            user_attested=args.user_attests_rights,
+            user_attested=args.user_attests_rights, parallel_only=args.parallel_only,
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
