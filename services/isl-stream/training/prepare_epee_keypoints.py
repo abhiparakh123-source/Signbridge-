@@ -172,11 +172,21 @@ def convert_dataset(
     feature_dir.mkdir(parents=True, exist_ok=True)
     manifest_rows, seen, signer_counts = [], set(), {}
     failures = []
+    unverified_hand_slot_clips = 0
     for row in rows:
         clip_id, signer = row["clip_id"].strip(), row["signer_id"].strip()
         if signer not in owner:
             continue
         if parallel_only and row.get("parallel", "").strip().lower() != "yes":
+            continue
+        hand_slot_status = row.get("hand_slots", "").strip().lower()
+        if hand_slot_status == "unverified":
+            # v0.4 explicitly identifies a small number of clips whose hands
+            # could not be side-checked. Exclude them rather than guessing.
+            unverified_hand_slot_clips += 1
+            continue
+        if hand_slot_status != "verified":
+            failures.append({"clip_id": clip_id, "error": "hand_slots must be verified or unverified"})
             continue
         try:
             if not clip_id or clip_id in seen:
@@ -186,8 +196,6 @@ def convert_dataset(
             phrase = row["phrase_id"].strip()
             if not phrase:
                 raise ValueError("phrase_id is required for leakage checks")
-            if row["hand_slots"].strip().lower() != "verified":
-                raise ValueError("hand_slots must be verified for this baseline")
             fps, n_frames = float(row["fps"]), int(row["n_frames"])
             if not np.isfinite(fps) or fps <= 0 or n_frames < 2:
                 raise ValueError("fps and n_frames must be positive")
@@ -241,6 +249,7 @@ def convert_dataset(
     return {
         "ok": True, "clips": len(manifest_rows), "feature_dim": FEATURE_DIM,
         "signer_counts": signer_counts,
+        "skipped_unverified_hand_slot_clips": unverified_hand_slot_clips,
         "split_counts": {name: sum(row["split"] == name for row in manifest_rows)
                          for name in ("train", "validation", "test")},
         "manifest": str(manifest_path),
