@@ -90,6 +90,17 @@ class TrainerPipelineTests(unittest.TestCase):
             self.assertTrue(np.isfinite(metrics["ctc_loss"]))
             self.assertGreaterEqual(metrics["gloss_wer"], 0.0)
 
+    def test_maps_heldout_gloss_to_explicit_unknown_token(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = self.make_dataset(root)
+            rows = load_manifest(manifest, root, "ASL")
+            validation_rows = [row for row in rows if row["_split"] == "validation"]
+            # HELLO is deliberately absent from the training vocabulary.
+            dataset = LandmarkDataset(validation_rows, {"<blank>": 0, "<unk>": 1, "TRAIN_ONLY": 2})
+            _, targets = dataset[0]
+            self.assertEqual(targets.tolist(), [1])
+
     def test_rejects_signer_leakage_between_splits(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
