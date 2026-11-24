@@ -28,7 +28,9 @@ const required = [
   ["call attempt invalidation", /callAttemptRef\.current\+=1/],
   ["stale call setup cannot overwrite a newer call", /callAttemptRef\.current!==attempt\|\|pcRef\.current!==pc/],
   ["stale call setup cannot clear a newer busy state", /if\(callAttemptRef\.current===attempt\)setBusy\(false\)/],
-  ["peer connection registered before microphone permission", /pcRef\.current=pc;pc\.ontrack/],
+  // ICE diagnostics now register state handlers between peer creation and ontrack.
+  // Ensure the peer is registered and its track handler is installed before requesting mic permission.
+  ["peer connection registered before microphone permission", /pcRef\.current=pc;(?![\s\S]*?getUserMedia)[\s\S]*?pc\.ontrack=/],
   ["camera track cleanup", /getTracks\(\)\.forEach\(t=>t\.stop\(\)\)/],
   ["speech recognition error handling", /r\.onerror/],
   ["speech synthesis fallback", /speechSynthesis/],
