@@ -41,11 +41,12 @@ jobs:
           python services/isl-stream/training/prepare_epee_keypoints.py \
             --dataset-root "$RUNNER_TEMP/epee-dataset" \
             --output-root "$RUNNER_TEMP/epee-prepared" \
-            --train-signers ALPHA BRAVO CHARLIE FOXTROT \
-            --validation-signers DELTA GOLF \
-            --test-signers ECHO HOTEL \
-            --user-attests-rights
-      - name: Train one-epoch ASL CTC baseline on free CPU
+            --train-signers ALPHA BRAVO CHARLIE \
+            --validation-signers DELTA \
+            --test-signers ECHO \
+            --user-attests-rights \
+            --parallel-only
+      - name: Train 20-epoch ASL CTC baseline on free CPU
         run: |
           python services/isl-stream/training/train_ctc.py \
             --manifest "$RUNNER_TEMP/epee-prepared/features_manifest.csv" \
@@ -64,7 +65,7 @@ jobs:
           temp = Path(os.environ["RUNNER_TEMP"])
           out = {
               "dataset_revision": "9037c3f0278a900ac26eb4ba065a44d791d28f98",
-              "training_scope": "20-epoch experimental ASL gloss CTC baseline; free CPU runner",
+              "training_scope": "20-epoch experimental ASL gloss CTC baseline on parallel phrase-grid clips; signer-disjoint; free CPU runner",
               "checkpoint_retained": (temp / "epee-asl-ctc.pt").exists(),
               "dataset_payload_retained": False,
               "production_ready": False,
