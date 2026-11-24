@@ -26,6 +26,7 @@ const required = [
   ["camera permission flow", /getUserMedia/],
   ["call setup cancellation guard", /pcRef\.current!==pc/],
   ["call attempt invalidation", /callAttemptRef\.current\+=1/],
+  ["ICE restart refreshes candidate diagnostics", /setIceCandidateTypes\(\[\]\);pc\.restartIce\?\.\(\)/],
   ["caller can create an ICE restart offer", /createOffer\(\{iceRestart:true\}\)/],
   ["caller restarts ICE without replacing the peer connection", /pc\.restartIce\?\.\(\)/],
   ["receiver applies a renegotiation offer without closing the call", /setRemoteDescription\(\{type:"offer",sdp:remoteOffer\.trim\(\)\}\)/],
