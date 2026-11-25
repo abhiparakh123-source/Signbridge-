@@ -152,8 +152,13 @@ export function MeteredCall({ apiKey }) {
         });
 
         remote.on("state-change", ({ to }) => {
-          if (attemptRef.current === attempt && to === "connected") {
+          if (attemptRef.current !== attempt) return;
+          if (to === "connected") {
             setStatus("Connected · encrypted WebRTC audio");
+          } else if (to === "disconnected") {
+            setStatus("Other caller's network connection was interrupted · waiting for recovery…");
+          } else if (to === "failed") {
+            setStatus("Other caller's connection failed · try rejoining the room or changing networks");
           }
         });
       });
@@ -170,6 +175,9 @@ export function MeteredCall({ apiKey }) {
         if (attemptRef.current !== attempt) return;
         if (to === "reconnecting") setStatus("Signalling interrupted · reconnecting…");
         else if (to === "joined") setStatus("Room ready · waiting for the other caller…");
+        else if (to === "disconnected") setStatus("Call signalling disconnected · attempting recovery…");
+        else if (to === "failed") setStatus("Call signalling failed · check the network and rejoin");
+        else if (to === "closed" && peerRef.current === peer) setStatus("Call signalling closed");
       });
 
       peer.on("error", ({ err }) => {
