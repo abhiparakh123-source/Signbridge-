@@ -23,6 +23,7 @@ for (const file of ["manifest.webmanifest", "sw.js"]) {
 const app = readFileSync("src/App.jsx", "utf8");
 const required = [
   ["React import", /import React/],
+  ["missing Metered key clearly identifies manual fallback", /Managed internet calling is not configured in this build[\s\S]*?manual connection-code fallback/],
   ["camera permission flow", /getUserMedia/],
   ["call SDP validation is imported", /validateCallSdp/],
   ["invalid offers are rejected before microphone permission", /validateCallSdp\(remoteOffer,"offer"\);if\(!validation\.ok\)/],
@@ -63,7 +64,6 @@ for (const [label, pattern] of required) {
 const metered = readFileSync("src/MeteredCall.jsx", "utf8");
 const meteredRequired = [
   ["Metered SDK import", /import\s*\{\s*MeteredPeer\s*\}\s*from\s*["']@metered-ca\/realtime["']/],
-  ["missing Metered key clearly identifies manual fallback", /Managed internet calling is not configured in this build[\s\S]*?manual connection-code fallback/],
   ["publishable key passed only from build environment", /new MeteredPeer\(\{\s*apiKey\s*\}\)/],
   ["room codes are generated with secure randomness", /crypto\.getRandomValues/],
   ["private room join", /peer\.join\(["']signbridge-/],
