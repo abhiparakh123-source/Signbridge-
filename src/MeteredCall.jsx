@@ -32,17 +32,21 @@ export function MeteredCall({ apiKey }) {
   const [remoteCaptionInterim, setRemoteCaptionInterim] = useState("");
   const [remoteCaptionLanguage, setRemoteCaptionLanguage] = useState("en-IN");
   const [remoteCaptionOn, setRemoteCaptionOn] = useState(false);
+  const [iceRoute, setIceRoute] = useState("Waiting for connection diagnostics");
 
   const peerRef = useRef(null);
   const streamRef = useRef(null);
   const audioRef = useRef(null);
   const remoteTrackRef = useRef(null);
   const remoteRecRef = useRef(null);
+  const iceStatsTimerRef = useRef(null);
   const attemptRef = useRef(0);
 
   const stopRemoteCaptions = () => {
     const recognition = remoteRecRef.current;
     remoteRecRef.current = null;
+    if (iceStatsTimerRef.current) clearInterval(iceStatsTimerRef.current);
+    iceStatsTimerRef.current = null;
     try {
       recognition?.stop();
     } catch {
@@ -52,9 +56,16 @@ export function MeteredCall({ apiKey }) {
     setRemoteCaptionInterim("");
   };
 
+  const stopIceDiagnostics = () => {
+    if (iceStatsTimerRef.current) clearInterval(iceStatsTimerRef.current);
+    iceStatsTimerRef.current = null;
+    setIceRoute("Call ended");
+  };
+
   const stop = async () => {
     attemptRef.current++;
     stopRemoteCaptions();
+    stopIceDiagnostics();
     remoteTrackRef.current = null;
     const peer = peerRef.current;
     peerRef.current = null;
@@ -121,6 +132,29 @@ export function MeteredCall({ apiKey }) {
       peer.on("peer-joined", ({ peer: remote }) => {
         if (attemptRef.current !== attempt) return;
 
+        const updateIceRoute = async () => {
+          try {
+            const pc = remote.pc; // Re-read after reconnect; Metered replaces this object.
+            if (!pc || typeof pc.getStats !== "function") { setIceRoute("ICE diagnostics unavailable"); return; }
+            const stats = await pc.getStats();
+            const reports = [...stats.values()];
+            const pair = reports.find(item => item.type === "candidate-pair" && (item.selected === true || (item.nominated === true && item.state === "succeeded")));
+            if (!pair) { setIceRoute("ICE route not selected yet"); return; }
+            const local = stats.get(pair.localCandidateId);
+            const remoteCandidate = stats.get(pair.remoteCandidateId);
+            const types = [local?.candidateType, remoteCandidate?.candidateType].filter(Boolean);
+            setIceRoute(types.includes("relay") ? "TURN relay active" : types.length ? "Direct connection · " + [...new Set(types)].join(" / ") : "Connected · candidate type unavailable");
+          } catch { setIceRoute("ICE diagnostics temporarily unavailable"); }
+        };
+        const startIceDiagnostics = () => {
+          if (iceStatsTimerRef.current) clearInterval(iceStatsTimerRef.current);
+          setIceRoute("Checking selected ICE route…");
+          updateIceRoute();
+          iceStatsTimerRef.current = setInterval(updateIceRoute, 5000);
+        };
+        startIceDiagnostics();
+        remote.on("connection-reset", startIceDiagnostics);
+
         remote.on("stream-added", ({ stream: remoteStream }) => {
           if (attemptRef.current !== attempt) return;
 
@@ -166,6 +200,7 @@ export function MeteredCall({ apiKey }) {
       peer.on("peer-left", () => {
         if (attemptRef.current !== attempt) return;
         stopRemoteCaptions();
+        stopIceDiagnostics();
         remoteTrackRef.current = null;
         if (audioRef.current) audioRef.current.srcObject = null;
         setStatus("Other caller left the room");
@@ -321,6 +356,7 @@ export function MeteredCall({ apiKey }) {
         account has an active free TURN service, automatic TURN injection is enabled, and quota remains.
       </p>
       <div className="call-status" role="status">{status}</div>
+      <p className="privacy" aria-live="polite">Network route: {iceRoute}. TURN is confirmed only when this reports “TURN relay active”.</p>
 
       {!activeRoom ? (
         <>
